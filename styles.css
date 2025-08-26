@@ -382,6 +382,45 @@ a {
         padding: var(--spacing-md) 0;
         border-bottom: 1px solid var(--border-color);
     }
+
+    /* Mobile menu accessibility enhancements */
+    .nav.open .nav-link {
+        /* Ensure all links are tabbable and visible when menu is open */
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    /* Focus styles for mobile navigation */
+    .nav-link:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    /* Ensure dropdown menus work properly in mobile */
+    .nav-dropdown .dropdown-menu {
+        position: static;
+        display: none;
+        background: transparent;
+        box-shadow: none;
+        margin-top: var(--spacing-sm);
+        padding-left: var(--spacing-md);
+    }
+
+    .nav-dropdown.open .dropdown-menu {
+        display: block;
+    }
+
+    .nav-dropdown .dropdown-menu a {
+        display: block;
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--border-color-light);
+        color: var(--text-secondary);
+    }
+
+    .nav-dropdown .dropdown-menu a:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
 }
 
 /* ===== HERO SECTION ===== */
@@ -1767,6 +1806,50 @@ a {
     margin-bottom: 0;
 }
 
+.character-counter {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: right;
+    margin-top: var(--spacing-xs);
+}
+
+textarea.form-input {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Exchange modal styles */
+.price-delta {
+    background: var(--background-card);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+    margin: var(--spacing-md) 0;
+}
+
+.delta-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+}
+
+.delta-label {
+    color: var(--text-secondary);
+}
+
+.delta-amount {
+    font-weight: 600;
+}
+
+.delta-amount.positive {
+    color: #22c55e;
+}
+
+.delta-amount.negative {
+    color: #ef4444;
+}
+
 .form-label {
     display: block;
     font-weight: 500;
@@ -2596,3 +2679,11 @@ textarea:focus {
 }
 /* Toast fade-out support */
 .toast.fade-out { opacity: 0; transition: opacity .25s ease; }
+
+/* Toast z-index and gap for accessibility and stacking */
+#notificationToast {
+  z-index: var(--z-toast, 1200) !important;
+}
+#notificationToast .toast {
+  margin-bottom: 8px;
+}

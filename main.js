@@ -361,36 +361,68 @@ class NotificationManager {
         // Track the timeout for the current toast. When a new notification is shown
         // any existing timeout is cleared to ensure predictable auto‑hide behaviour.
         this.currentTimeout = null;
+        this.watchdogTimeout = null;
     }
 
     show(message, type = 'info', duration = 4000) {
         if (!this.container) return;
-
+        // Use 3500ms default if not specified
+        duration = typeof duration === 'number' ? duration : 3500;
+        if (!duration || duration > 8000) duration = 3500;
         const notification = {
             id: Date.now(),
             message,
             type,
             duration
         };
-
-        // Add to stack and render the latest message. Because only one toast is visible at
-        // a time, we overwrite the existing content but retain a record of notifications.
         this.notifications.push(notification);
         this.render(notification);
-
-        // If a toast is already scheduled to hide, cancel it so that the duration is
-        // relative to the most recent notification.
         if (this.currentTimeout) {
             clearTimeout(this.currentTimeout);
             this.currentTimeout = null;
         }
-
-        // Schedule hiding of this toast after the specified duration.  Store the timeout
-        // identifier so it can be cancelled if another toast appears before it fires.
-        this.currentTimeout = setTimeout(() => {
+        if (this.watchdogTimeout) {
+            clearTimeout(this.watchdogTimeout);
+            this.watchdogTimeout = null;
+        }
+        // Track remaining time for pause/resume
+        let remaining = duration;
+        let start = Date.now();
+        const hideToast = () => {
             this.hide(notification.id);
             this.currentTimeout = null;
-        }, duration);
+            if (this.watchdogTimeout) {
+                clearTimeout(this.watchdogTimeout);
+                this.watchdogTimeout = null;
+            }
+        };
+        const scheduleHide = () => {
+            this.currentTimeout = setTimeout(hideToast, remaining);
+        };
+        scheduleHide();
+        // Watchdog: force close at 8s from show()
+        this.watchdogTimeout = setTimeout(hideToast, 8000);
+        // Pause on hover/focus, resume on leave/blur
+        const pause = () => {
+            if (this.currentTimeout) {
+                clearTimeout(this.currentTimeout);
+                this.currentTimeout = null;
+                remaining -= Date.now() - start;
+                if (remaining < 0) remaining = 0;
+            }
+        };
+        const resume = () => {
+            if (!this.currentTimeout && remaining > 0) {
+                start = Date.now();
+                scheduleHide();
+            }
+        };
+        this.container.onmouseenter = pause;
+        this.container.onfocus = pause;
+        this.container.onmouseleave = resume;
+        this.container.onblur = resume;
+        // Ensure z-index above mobile menu
+        this.container.style.zIndex = 'var(--z-toast, 1200)';
     }
 
     render(notification) {
@@ -626,6 +658,16 @@ class GrindCTRLApp {
             mobileMenuToggle.addEventListener('click', () => this.toggleMobileMenu());
         }
 
+        // Mobile dropdown menus
+        document.addEventListener('click', (event) => {
+            const dropdownToggle = event.target.closest('.nav-dropdown > a');
+            if (dropdownToggle) {
+                event.preventDefault();
+                const dropdown = dropdownToggle.parentElement;
+                dropdown.classList.toggle('open');
+            }
+        });
+
         // Close buttons
         document.addEventListener('click', (e) => {
             if (e.target.matches('.cart-close')) {
@@ -795,13 +837,11 @@ class GrindCTRLApp {
         if (!productsGrid) return;
 
         let filteredProducts = this.state.products;
-        
         if (this.state.currentFilter !== 'all') {
             filteredProducts = this.state.products.filter(product => 
                 product.category === this.state.currentFilter
             );
         }
-
         if (filteredProducts.length === 0) {
             productsGrid.innerHTML = `
                 <div class="no-products">
@@ -812,8 +852,22 @@ class GrindCTRLApp {
             `;
             return;
         }
-
         productsGrid.innerHTML = filteredProducts.map(product => this.createProductCard(product)).join('');
+        this.pruneInvalidProductCards();
+    }
+
+    pruneInvalidProductCards() {
+        const cards = document.querySelectorAll('.product-card');
+        cards.forEach(card => {
+            const img = card.querySelector('img.product-image');
+            if (!img || !img.src) {
+                card.remove();
+            } else {
+                img.onerror = () => {
+                    card.remove();
+                };
+            }
+        });
     }
 
     createProductCard(product) {
@@ -1284,8 +1338,16 @@ class GrindCTRLApp {
                                     <input type="text" name="postalCode" class="form-input" required>
                                 </div>
                             </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Note (optional)</label>
+                                <textarea name="note" class="form-input" maxlength="500" rows="3" placeholder="Add any special instructions or notes about your order"></textarea>
+                                <div class="character-counter">
+                                    <span class="character-count">0</span>/500 characters remaining
+                                </div>
+                            </div>
                         </div>
-                        
+
                         <button type="submit" class="btn btn-primary">Continue to Payment</button>
                     </form>
                 </div>
@@ -1293,6 +1355,19 @@ class GrindCTRLApp {
                 ${this.renderOrderSummary()}
             </div>
         `;
+
+        // Add character counter for note textarea
+        const noteTextarea = container.querySelector('textarea[name="note"]');
+        const characterCount = container.querySelector('.character-count');
+        if (noteTextarea && characterCount) {
+            const updateCounter = () => {
+                const remaining = 500 - noteTextarea.value.length;
+                characterCount.textContent = noteTextarea.value.length;
+                characterCount.parentElement.textContent = `${noteTextarea.value.length}/500 characters remaining`;
+            };
+            noteTextarea.addEventListener('input', updateCounter);
+            updateCounter(); // Initial update
+        }
 
         // Add form submission handler
         const form = document.getElementById('checkoutForm1');
@@ -1496,11 +1571,16 @@ class GrindCTRLApp {
             }
         });
 
-        // Validate email
+        // Validate email (required and valid format)
         const emailInput = form.querySelector('input[type="email"]');
-        if (emailInput && emailInput.value && !Utils.validateEmail(emailInput.value)) {
-            this.showFieldError(emailInput, 'Please enter a valid email address');
-            isValid = false;
+        if (emailInput) {
+            if (!emailInput.value.trim()) {
+                this.showFieldError(emailInput, 'Email address is required');
+                isValid = false;
+            } else if (!Utils.validateEmail(emailInput.value)) {
+                this.showFieldError(emailInput, 'Please enter a valid email address');
+                isValid = false;
+            }
         }
 
         // Validate phone
@@ -1588,9 +1668,11 @@ class GrindCTRLApp {
         return {
             "Order ID": orderId,
             "Customer Name": `${this.state.orderData.firstName} ${this.state.orderData.lastName}`,
+            "Customer Email": this.state.orderData.email || "",
             "Phone": this.state.orderData.phone,
             "City": this.state.orderData.city,
             "Address": this.state.orderData.address,
+            "Note": this.state.orderData.note || "",
             "COD Amount": codAmount.toFixed(2),
             "Tracking Number": trackingNumber,
             "Courier": "BOSTA",
@@ -1598,7 +1680,7 @@ class GrindCTRLApp {
             "Date": new Date().toISOString(),
             "Status": "New",
             "Payment Method": this.getPaymentMethodName(this.state.orderData.paymentMethod),
-            "Product": this.state.cart.map(item => 
+            "Product": this.state.cart.map(item =>
                 `${item.name}${item.size ? ` - ${item.size}` : ''} (${item.quantity}x)`
             ).join(', '),
             "Quantity": this.state.cart.reduce((total, item) => total + item.quantity, 0).toString()
@@ -1779,11 +1861,32 @@ class GrindCTRLApp {
             `;
         }
 
+        // Remove Return/Exchange buttons after successful order
+        this.removePostOrderActions();
+
         this.openModal('success');
     }
 
     closeSuccessModal() {
         this.closeModal('success');
+    }
+
+    removePostOrderActions() {
+        // Remove elements as specified in the requirements
+        const selectorsToRemove = [
+            '.post-order-actions .btn-return',
+            '.post-order-actions .btn-exchange',
+            '[data-action="return"]',
+            '[data-action="exchange"]',
+            '.order-actions' // Also remove the entire order-actions div if present
+        ];
+
+        selectorsToRemove.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                element.remove();
+            });
+        });
     }
 
     /**
@@ -1906,9 +2009,93 @@ class GrindCTRLApp {
 
     toggleMobileMenu() {
         const nav = document.querySelector('.nav');
-        if (nav) {
-            nav.classList.toggle('open');
+        const toggleBtn = document.getElementById('mobileMenuToggle');
+        if (nav && toggleBtn) {
+            const isOpen = nav.classList.toggle('open');
+            toggleBtn.setAttribute('aria-expanded', isOpen);
+
+            if (isOpen) {
+                // Focus management: focus first link when menu opens
+                const firstLink = nav.querySelector('.nav-link');
+                if (firstLink) {
+                    setTimeout(() => firstLink.focus(), 100);
+                }
+                // Add outside click and Esc listeners
+                this.setupMobileMenuListeners();
+            } else {
+                // Remove listeners when closing
+                this.removeMobileMenuListeners();
+                // Close any open dropdowns
+                document.querySelectorAll('.nav-dropdown.open').forEach(dropdown => {
+                    dropdown.classList.remove('open');
+                });
+            }
         }
+    }
+
+    setupMobileMenuListeners() {
+        // Remove any existing listeners first
+        this.removeMobileMenuListeners();
+
+        // Outside click handler
+        this.outsideClickHandler = (event) => {
+            const nav = document.querySelector('.nav');
+            const toggleBtn = document.getElementById('mobileMenuToggle');
+            if (nav && nav.classList.contains('open') &&
+                !nav.contains(event.target) && event.target !== toggleBtn) {
+                this.toggleMobileMenu();
+            }
+        };
+
+        // Esc key handler
+        this.escHandler = (event) => {
+            if (event.key === 'Escape') {
+                const nav = document.querySelector('.nav');
+                if (nav && nav.classList.contains('open')) {
+                    this.toggleMobileMenu();
+                    // Return focus to toggle button
+                    const toggleBtn = document.getElementById('mobileMenuToggle');
+                    if (toggleBtn) toggleBtn.focus();
+                }
+            }
+        };
+
+        // Add listeners
+        document.addEventListener('click', this.outsideClickHandler);
+        document.addEventListener('keydown', this.escHandler);
+    }
+
+    removeMobileMenuListeners() {
+        if (this.outsideClickHandler) {
+            document.removeEventListener('click', this.outsideClickHandler);
+            this.outsideClickHandler = null;
+        }
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
+    }
+
+    populateExchangeDropdowns() {
+        const oldItemSelect = document.getElementById('exchangeOldItem');
+        const newItemSelect = document.getElementById('exchangeNewItem');
+
+        if (!oldItemSelect || !newItemSelect || !this.state.products.length) return;
+
+        // Clear existing options except the first one
+        oldItemSelect.innerHTML = '<option value="">Choose item to exchange...</option>';
+        newItemSelect.innerHTML = '<option value="">Choose new item...</option>';
+
+        // Populate both dropdowns with product data
+        this.state.products.forEach(product => {
+            const optionText = `${product.name}${product.sku ? ` (${product.sku})` : ''} - ${product.price ? product.price.toFixed(2) : 'n/a'} EGP`;
+
+            const oldOption = new Option(optionText, product.id);
+            const newOption = new Option(optionText, product.id);
+
+            oldItemSelect.appendChild(oldOption);
+            newItemSelect.appendChild(newOption);
+        });
     }
 
     // ===== NAVIGATION AND SCROLLING =====
@@ -2105,8 +2292,7 @@ class GrindCTRLApp {
 
         // Attach handlers for Return
         attachLookupHandlers('returnPhone', 'findReturnOrders', 'returnOrderList', 'returnSubmit');
-        // Attach handlers for Exchange
-        attachLookupHandlers('exchangePhone', 'findExchangeOrders', 'exchangeOrderList', 'exchangeSubmit');
+        // Exchange form uses new item selection logic (no phone lookup)
 
         // Submit handlers for return and exchange forms
         const returnForm = document.getElementById('returnForm');
@@ -2125,6 +2311,11 @@ class GrindCTRLApp {
                     this.notifications.error('Please select an order to return.');
                     return;
                 }
+                if (!reasonVal) {
+                    this.notifications.error('Please provide a reason for the return.');
+                    document.getElementById('returnMessage')?.focus();
+                    return;
+                }
                 const orderId = selectedRadio.value;
                 // Look up the full order details by phone and id
                 const orders = getOrdersByPhone(phoneVal);
@@ -2132,7 +2323,8 @@ class GrindCTRLApp {
                 const payload = {
                     phone: phoneVal,
                     orderId: orderId,
-                    reason: reasonVal,
+                    requestType: "return",
+                    note: `Reason: ${reasonVal}`,
                     order: orderObj
                 };
                 const success = await this.sendReturnOrExchangeWebhook(payload, 'return');
@@ -2152,39 +2344,88 @@ class GrindCTRLApp {
         }
         const exchangeForm = document.getElementById('exchangeForm');
         if (exchangeForm) {
+            // Populate product dropdowns
+            this.populateExchangeDropdowns();
+
+            // Handle dropdown changes for price delta calculation
+            const oldItemSelect = document.getElementById('exchangeOldItem');
+            const newItemSelect = document.getElementById('exchangeNewItem');
+            const priceDeltaDiv = document.getElementById('priceDelta');
+            const deltaAmountSpan = document.getElementById('deltaAmount');
+
+            const updatePriceDelta = () => {
+                const oldItemId = oldItemSelect?.value;
+                const newItemId = newItemSelect?.value;
+
+                if (oldItemId && newItemId) {
+                    const oldProduct = this.state.products.find(p => p.id === oldItemId);
+                    const newProduct = this.state.products.find(p => p.id === newItemId);
+
+                    if (oldProduct && newProduct) {
+                        const oldPrice = oldProduct.price || 0;
+                        const newPrice = newProduct.price || 0;
+                        const delta = newPrice - oldPrice;
+
+                        priceDeltaDiv.style.display = 'block';
+                        deltaAmountSpan.textContent = delta >= 0 ?
+                            `+${delta.toFixed(2)} EGP` :
+                            `${delta.toFixed(2)} EGP`;
+                        deltaAmountSpan.className = delta >= 0 ? 'positive' : 'negative';
+                    }
+                } else {
+                    priceDeltaDiv.style.display = 'none';
+                }
+            };
+
+            oldItemSelect?.addEventListener('change', updatePriceDelta);
+            newItemSelect?.addEventListener('change', updatePriceDelta);
+
+            // Handle form submission
             exchangeForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const phoneVal = document.getElementById('exchangePhone')?.value.trim();
-                const reasonVal = document.getElementById('exchangeMessage')?.value.trim();
-                const selectedRadio = document.querySelector('#exchangeOrderList input[type="radio"]:checked');
-                if (!phoneVal) {
-                    this.notifications.error('Please enter a phone number.');
+
+                const oldItemId = document.getElementById('exchangeOldItem')?.value;
+                const newItemId = document.getElementById('exchangeNewItem')?.value;
+                const comment = document.getElementById('exchangeComment')?.value.trim() || '';
+
+                if (!oldItemId) {
+                    this.notifications.error('Please select an item to exchange.');
                     return;
                 }
-                if (!selectedRadio) {
-                    this.notifications.error('Please select an order to exchange.');
+                if (!newItemId) {
+                    this.notifications.error('Please select a new item.');
                     return;
                 }
-                const orderId = selectedRadio.value;
-                const orders = getOrdersByPhone(phoneVal);
-                const orderObj = orders.find(o => o['Order ID'] === orderId) || null;
+
+                const oldProduct = this.state.products.find(p => p.id === oldItemId);
+                const newProduct = this.state.products.find(p => p.id === newItemId);
+
+                if (!oldProduct || !newProduct) {
+                    this.notifications.error('Selected item not found. Please try again.');
+                    return;
+                }
+
+                const oldPrice = oldProduct.price || 0;
+                const newPrice = newProduct.price || 0;
+                const delta = newPrice - oldPrice;
+                const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
+
+                // Create note-only payload as specified
+                const note = `Exchange | Old: [${oldProduct.sku || 'n/a'} – ${oldProduct.name} – ${oldPrice.toFixed(2)} EGP] | New: [${newProduct.sku || 'n/a'} – ${newProduct.name} – ${newPrice.toFixed(2)} EGP] | Delta: ${deltaText} EGP | Comment: ${comment}`;
+
                 const payload = {
-                    phone: phoneVal,
-                    orderId: orderId,
-                    reason: reasonVal,
-                    order: orderObj
+                    note: note
                 };
+
                 const success = await this.sendReturnOrExchangeWebhook(payload, 'exchange');
                 if (success) {
                     this.notifications.success('Exchange request submitted! Our support team will contact you soon.');
                 } else {
                     this.notifications.error('Failed to submit exchange request. Please try again.');
                 }
+
                 exchangeForm.reset();
-                const listEl = document.getElementById('exchangeOrderList');
-                const submitBtn = document.getElementById('exchangeSubmit');
-                if (listEl) listEl.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = true;
+                priceDeltaDiv.style.display = 'none';
                 this.closeModal('exchange');
             });
         }
