@@ -2369,8 +2369,8 @@ class GrindCTRLApp {
                 container.appendChild(item);
             });
 
-            \1
-            if (submitBtn) { submitBtn.style.display = 'inline-block'; }
+            container.style.display = 'block';
+            if (submitBtn) { submitBtn.style.display = 'inline-block'; submitBtn.disabled = true; }
 
             // Enable submit when an order is chosen
             container.addEventListener('change', (e) => {
@@ -2385,10 +2385,9 @@ class GrindCTRLApp {
                 }
             });
 
-            // Also allow clicking anywhere on the card to select the radio
-            /*__ORDER_ITEM_CLICK_HANDLER__*/
-            container.addEventListener('click', (e) => {
-                const card = e.target.closest('.order-item');
+            // Allow clicking anywhere on the card to select its radio
+            container.addEventListener('click', (ev) => {
+                const card = ev.target.closest('.order-item');
                 if (!card || !container.contains(card)) return;
                 const r = card.querySelector('input[type="radio"]');
                 if (r) {
@@ -2426,10 +2425,9 @@ class GrindCTRLApp {
                 populateOrderSelect(container, orders, submitBtn);
             });
 
-            // Also allow clicking anywhere on the card to select the radio
-            /*__ORDER_ITEM_CLICK_HANDLER__*/
-            container.addEventListener('click', (e) => {
-                const card = e.target.closest('.order-item');
+            // Allow clicking anywhere on the card to select its radio
+            container.addEventListener('click', (ev) => {
+                const card = ev.target.closest('.order-item');
                 if (!card || !container.contains(card)) return;
                 const r = card.querySelector('input[type="radio"]');
                 if (r) {
@@ -2934,9 +2932,9 @@ window.closeSuccessModal = function() {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new GrindCTRLApp();
-    // Safety: hide loading screen after window load or 6s, whichever comes first
-    window.addEventListener('load', () => { try { window.app.loading.hideAll(); } catch(e){} });
-    setTimeout(() => { try { window.app.loading.hideAll(); } catch(e){} }, 6000);
+    // Failsafe: hide loading screen after load or 7s
+    window.addEventListener('load', () => { try { window.app.loading.hideAll(); } catch(e) { try { document.getElementById('loadingScreen')?.classList.add('hidden'); } catch(_){} } });
+    setTimeout(() => { try { window.app.loading.hideAll(); } catch(e) { try { document.getElementById('loadingScreen')?.classList.add('hidden'); } catch(_){} } }, 7000);
 });
 
 // ===== SERVICE WORKER REGISTRATION =====
