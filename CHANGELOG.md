@@ -274,10 +274,33 @@ This patch implements surgical, in-place edits to the vanilla-JS storefront whil
 - **Accessibility**: Proper labels, keyboard navigation, screen reader support
 - **Responsive Design**: Seamless experience across all device sizes
 
+### Critical Bug Fixes ✅
+**Files:** `main.js`, `styles.css`, `index.html`
+**Issue:** Exchange order selection not working + checkout scrolling problems
+
+- **Exchange Order Selection Fix:** Completely overhauled `populateOrderSelect()` function with proper submit button parameter passing and visual feedback
+  - Added rich order information display (ID, price, product, date, status)
+  - Enhanced radio button functionality with proper event handling
+  - Added visual selection states and auto-selection for single orders
+  - Fixed submit button enable/disable logic
+
+- **Checkout Scrolling Fix:** Redesigned checkout modal layout for better mobile experience
+  - **Fixed Action Bar:** Checkout button now has sticky positioning that prevents it from disappearing
+  - **Enhanced Layout:** Separated form and sidebar with proper scrolling behavior
+  - **Mobile Optimization:** Full-screen layout on mobile with fixed bottom action bar
+  - **Order Summary:** Added scrollable order summary to handle multiple products
+  - **Touch Targets:** Improved button sizes for mobile (44px minimum)
+
+- **Visual Enhancements:**
+  - **Order Cards:** Professional order selection cards with detailed information
+  - **Price Display:** Clear price formatting in order selection
+  - **Status Indicators:** Visual feedback for selected orders
+  - **Responsive Design:** Seamless experience across all device sizes
+
 ## Files Modified
-- `index.html` - Complete exchange modal redesign with 3-step workflow, order selection UI, enhanced form structure
-- `main.js` - Professional exchange workflow implementation, automatic order linking, enhanced pricing logic, comprehensive validation
-- `styles.css` - Modern exchange flow styling, step-by-step visual design, responsive order selection, professional info boxes and summaries
+- `index.html` - Complete exchange modal redesign with 3-step workflow, order selection UI, enhanced form structure, fixed checkout layout
+- `main.js` - Professional exchange workflow implementation, automatic order linking, enhanced pricing logic, comprehensive validation, fixed order selection bugs, improved checkout functionality
+- `styles.css` - Modern exchange flow styling, step-by-step visual design, responsive order selection, professional info boxes and summaries, fixed checkout scrolling, enhanced mobile experience
 
 ## Bundle Size Impact
 - **+5 KB gzip MAX increase maintained**

@@ -1342,12 +1342,20 @@ class GrindCTRLApp {
                                 </div>
                             </div>
                         </div>
-
-                        <button type="submit" class="btn btn-primary">Continue to Payment</button>
+                        
+                        <!-- Fixed action bar for checkout button -->
+                        <div class="checkout-action-bar">
+                            <button type="submit" class="btn btn-primary btn-large">
+                                Continue to Payment
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
                     </form>
                 </div>
                 
+                <div class="checkout-sidebar">
                 ${this.renderOrderSummary()}
+                </div>
             </div>
         `;
 
@@ -1573,8 +1581,8 @@ class GrindCTRLApp {
                 this.showFieldError(emailInput, 'Email address is required');
                 isValid = false;
             } else if (!Utils.validateEmail(emailInput.value)) {
-                this.showFieldError(emailInput, 'Please enter a valid email address');
-                isValid = false;
+            this.showFieldError(emailInput, 'Please enter a valid email address');
+            isValid = false;
             }
         }
 
@@ -1675,7 +1683,7 @@ class GrindCTRLApp {
             "Date": new Date().toISOString(),
             "Status": "New",
             "Payment Method": this.getPaymentMethodName(this.state.orderData.paymentMethod),
-            "Product": this.state.cart.map(item =>
+            "Product": this.state.cart.map(item => 
                 `${item.name}${item.size ? ` - ${item.size}` : ''} (${item.quantity}x)`
             ).join(', '),
             "Quantity": this.state.cart.reduce((total, item) => total + item.quantity, 0).toString()
@@ -2327,29 +2335,53 @@ class GrindCTRLApp {
             container.innerHTML = '';
             if (!orders || orders.length === 0) {
                 container.style.display = 'none';
-                submitBtn.disabled = true;
+                if (submitBtn) submitBtn.disabled = true;
                 return;
             }
+
+            // Create order selection with better information display
             orders.forEach(order => {
                 const item = document.createElement('div');
                 item.className = 'order-item';
-                const label = document.createElement('label');
+
                 const radio = document.createElement('input');
                 radio.type = 'radio';
                 radio.name = `${container.id}_radio`;
                 radio.value = order['Order ID'];
-                label.appendChild(radio);
-                const text = document.createTextNode(`${order['Order ID']} – ${order.Total} ${order.Currency || ''}`);
-                label.appendChild(text);
+                radio.id = `order_${order['Order ID']}`;
+
+                const label = document.createElement('label');
+                label.setAttribute('for', `order_${order['Order ID']}`);
+                label.innerHTML = `
+                    <div class="order-header">
+                        <strong>${order['Order ID']}</strong>
+                        <span class="order-price">${order.Total} EGP</span>
+                    </div>
+                    <div class="order-info">
+                        <small>Product: ${order.Product}</small><br>
+                        <small>Date: ${new Date(order.Date).toLocaleDateString()}</small><br>
+                        <small>Status: ${order.Status}</small>
+                    </div>
+                `;
+
+                item.appendChild(radio);
                 item.appendChild(label);
                 container.appendChild(item);
             });
-            container.style.display = '';
-            submitBtn.disabled = true;
+
+            container.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = true;
+
             // Enable submit when an order is chosen
             container.addEventListener('change', (e) => {
                 if (e.target && e.target.matches('input[type="radio"]')) {
-                    submitBtn.disabled = false;
+                    if (submitBtn) submitBtn.disabled = false;
+                    // Remove selected class from all items
+                    container.querySelectorAll('.order-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    // Add selected class to the selected item
+                    e.target.closest('.order-item').classList.add('selected');
                 }
             });
         };
@@ -2409,18 +2441,27 @@ class GrindCTRLApp {
                 if (phone || email) {
                     const orders = getOrdersByPhoneOrEmail(phone, email);
                     if (orders.length > 0) {
-                        populateOrderSelect(orderListContainer, orders);
+                        populateOrderSelect(orderListContainer, orders, step2ContinueBtn);
                         orderListContainer.style.display = 'block';
 
                         // Pre-fill order ID if only one order found
                         if (orders.length === 1 && orderIdInput) {
                             orderIdInput.value = orders[0]['Order ID'];
+                            // Auto-select the radio button
+                            const radio = orderListContainer.querySelector('input[type="radio"]');
+                            if (radio) {
+                                radio.checked = true;
+                                step2ContinueBtn.disabled = false;
+                                radio.closest('.order-item').classList.add('selected');
+                            }
                         }
                     } else {
                         orderListContainer.style.display = 'none';
+                        step2ContinueBtn.disabled = true;
                     }
                 } else {
                     orderListContainer.style.display = 'none';
+                    step2ContinueBtn.disabled = true;
                 }
             };
 
@@ -2556,12 +2597,22 @@ class GrindCTRLApp {
             const showOrderHistory = (customerData) => {
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
                 if (orders.length > 0) {
-                    populateOrderSelect(exchangeOrderList, orders);
+                    populateOrderSelect(exchangeOrderList, orders, step2ContinueBtn);
                     orderSelectionSection.style.display = 'block';
                     currentStep = 2;
 
                     // Scroll to order selection
                     orderSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // Auto-select first order for better UX
+                    if (orders.length === 1) {
+                        const firstRadio = exchangeOrderList.querySelector('input[type="radio"]');
+                        if (firstRadio) {
+                            firstRadio.checked = true;
+                            step2ContinueBtn.disabled = false;
+                            firstRadio.closest('.order-item').classList.add('selected');
+                        }
+                    }
                 } else {
                     this.notifications.error('No previous orders found. Please contact support for exchanges.');
                     return false;
