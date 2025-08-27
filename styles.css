@@ -3578,3 +3578,70 @@ textarea:focus {
     font-style: italic;
     min-height: 200px;
 }
+
+/* Exchange Order Selection Grid */
+.order-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.order-selection-grid .order-item {
+    position: relative;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 1rem;
+    background-color: var(--background-light);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.order-selection-grid .order-item input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.order-selection-grid .order-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.order-selection-grid .order-item.selected,
+.order-selection-grid .order-item input[type="radio"]:checked + label {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color-light);
+}
+
+.order-selection-grid .order-item .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.order-selection-grid .order-item .order-header strong {
+    color: var(--text-dark);
+}
+
+.order-selection-grid .order-item .order-header .order-price {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.order-selection-grid .order-item .order-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.order-selection-grid .order-item .order-info small {
+    display: block;
+    margin-bottom: 0.25rem;
+}
