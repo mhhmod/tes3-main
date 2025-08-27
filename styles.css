@@ -3053,3 +3053,175 @@ textarea:focus {
         padding: var(--spacing-xs);
     }
 }
+
+/* New Exchange Flow Styles */
+.info-box {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: linear-gradient(135deg, var(--background-card), rgba(59, 130, 246, 0.05));
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+.info-box i {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.exchange-summary {
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.exchange-summary h5 {
+    font-family: var(--font-secondary);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.delta-explanation {
+    margin-top: var(--spacing-sm);
+}
+
+.explanation-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-xs) 0;
+    padding: var(--spacing-sm);
+    background: var(--background-hover);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.explanation-item i {
+    color: var(--primary-color);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.explanation-item strong {
+    color: var(--text-primary);
+}
+
+/* Step-by-step form styles */
+.form-section h4 {
+    color: var(--primary-color);
+    font-family: var(--font-secondary);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    position: relative;
+    padding-left: var(--spacing-lg);
+}
+
+.form-section h4::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+/* Order list improvements */
+.order-list {
+    margin-top: var(--spacing-md);
+}
+
+.order-item {
+    background: var(--background-hover);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.order-item:hover {
+    background: var(--background-card);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-item.selected {
+    background: linear-gradient(135deg, var(--primary-color), rgba(59, 130, 246, 0.8));
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.order-item input[type="radio"] {
+    margin-right: var(--spacing-sm);
+}
+
+.order-item .order-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+.order-item.selected .order-info {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive improvements for new exchange flow */
+@media (max-width: 768px) {
+    .info-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .summary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .explanation-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .form-section h4 {
+        font-size: 1.1rem;
+        padding-left: var(--spacing-md);
+    }
+
+    .form-section h4::before {
+        width: 6px;
+        height: 6px;
+    }
+}

@@ -2516,155 +2516,231 @@ class GrindCTRLApp {
         }
         const exchangeForm = document.getElementById('exchangeForm');
         if (exchangeForm) {
-            // Add order lookup functionality
+            // 3-Step Exchange Process
+            let currentStep = 1;
+            let selectedOrder = null;
+            let selectedOrderItem = null;
+
             const phoneInput = exchangeForm.querySelector('input[name="phone"]');
             const emailInput = exchangeForm.querySelector('input[name="email"]');
-            const orderIdInput = exchangeForm.querySelector('input[name="orderId"]');
-            const orderListContainer = document.createElement('div');
-            orderListContainer.id = 'exchangeOrderList';
-            orderListContainer.className = 'order-list';
-            orderListContainer.style.display = 'none';
+            const orderSelectionSection = document.getElementById('orderSelectionSection');
+            const itemSelectionSection = document.getElementById('itemSelectionSection');
+            const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
+            const exchangeOrderList = document.getElementById('exchangeOrderList');
 
-            // Insert order list after the order ID field
-            if (orderIdInput) {
-                orderIdInput.parentNode.appendChild(orderListContainer);
-            }
-
-            // Populate product dropdowns
+            // Populate product dropdown for step 3
             this.populateExchangeDropdowns();
 
-            const updateOrderList = () => {
-                const phone = phoneInput?.value.trim();
-                const email = emailInput?.value.trim();
+            // Step 1: Customer Details Validation
+            const validateStep1 = () => {
+                const formData = new FormData(exchangeForm);
+                const data = {};
+                for (let [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
 
-                if (phone || email) {
-                    const orders = getOrdersByPhoneOrEmail(phone, email);
-                    if (orders.length > 0) {
-                        populateOrderSelect(orderListContainer, orders);
-                        orderListContainer.style.display = 'block';
+                if (!data.phone || !data.email || !data.firstName || !data.lastName || !data.address || !data.city) {
+                    this.notifications.error('Please fill in all required fields.');
+                    return false;
+                }
 
-                        // Pre-fill order ID if only one order found
-                        if (orders.length === 1 && orderIdInput) {
-                            orderIdInput.value = orders[0]['Order ID'];
-                        }
-                    } else {
-                        orderListContainer.style.display = 'none';
-                    }
+                if (!Utils.validateEmail(data.email)) {
+                    this.notifications.error('Please enter a valid email address.');
+                    return false;
+                }
+
+                return data;
+            };
+
+            // Step 2: Show Order History
+            const showOrderHistory = (customerData) => {
+                const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
+                if (orders.length > 0) {
+                    populateOrderSelect(exchangeOrderList, orders);
+                    orderSelectionSection.style.display = 'block';
+                    currentStep = 2;
+
+                    // Scroll to order selection
+                    orderSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    orderListContainer.style.display = 'none';
+                    this.notifications.error('No previous orders found. Please contact support for exchanges.');
+                    return false;
+                }
+                return true;
+            };
+
+            // Step 3: Show Item Selection
+            const showItemSelection = (order) => {
+                selectedOrder = order;
+                itemSelectionSection.style.display = 'block';
+                currentStep = 3;
+                exchangeSubmitBtn.style.display = 'block';
+
+                // Scroll to item selection
+                itemSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Show exchange summary
+                updateExchangeSummary(order);
+            };
+
+            // Update exchange summary
+            const updateExchangeSummary = (order) => {
+                const summaryContent = document.getElementById('summaryContent');
+                if (summaryContent && order) {
+                    summaryContent.innerHTML = `
+                        <div class="summary-item">
+                            <strong>Original Order:</strong> ${order['Order ID']}
+                        </div>
+                        <div class="summary-item">
+                            <strong>Original Product:</strong> ${order['Product']}
+                        </div>
+                        <div class="summary-item">
+                            <strong>Original Payment:</strong> ${order['Payment Method']}
+                        </div>
+                        <div class="summary-item">
+                            <strong>Order Date:</strong> ${new Date(order['Date']).toLocaleDateString()}
+                        </div>
+                    `;
+                    document.getElementById('exchangeSummary').style.display = 'block';
                 }
             };
 
-            phoneInput?.addEventListener('input', updateOrderList);
-            emailInput?.addEventListener('input', updateOrderList);
-
-            // Handle dropdown changes for price delta calculation and product preview
-            const oldItemSelect = document.getElementById('exchangeOldItem');
+            // Handle item selection and price calculation
             const newItemSelect = document.getElementById('exchangeNewItem');
             const priceDeltaDiv = document.getElementById('priceDelta');
             const deltaAmountSpan = document.getElementById('deltaAmount');
+            const deltaExplanation = document.getElementById('deltaExplanation');
             const productPreview = document.getElementById('exchangeProductPreview');
 
-            const updatePriceDelta = () => {
-                const oldItemId = oldItemSelect?.value;
+            const updatePriceCalculation = () => {
                 const newItemId = newItemSelect?.value;
 
-                if (oldItemId && newItemId) {
-                    const oldProduct = this.state.products.find(p => p.id === oldItemId);
+                if (newItemId && selectedOrder) {
                     const newProduct = this.state.products.find(p => p.id === newItemId);
+                    const oldProductPrice = selectedOrder ? parseFloat(selectedOrder['Total']) || 0 : 0;
 
-                    if (oldProduct && newProduct) {
-                        const oldPrice = oldProduct.price || 0;
+                    if (newProduct) {
                         const newPrice = newProduct.price || 0;
-                        const delta = newPrice - oldPrice;
+                        const delta = newPrice - oldProductPrice;
+                        const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
 
                         priceDeltaDiv.style.display = 'block';
-                        deltaAmountSpan.textContent = delta >= 0 ?
-                            `+${delta.toFixed(2)} EGP` :
-                            `${delta.toFixed(2)} EGP`;
+                        deltaAmountSpan.textContent = `${deltaText} EGP`;
                         deltaAmountSpan.className = delta >= 0 ? 'positive' : 'negative';
-                    }
-                } else {
-                    priceDeltaDiv.style.display = 'none';
-                }
-            };
 
-            const updateProductPreview = () => {
-                const newItemId = newItemSelect?.value;
+                        // Show clear explanation
+                        if (delta > 0) {
+                            deltaExplanation.innerHTML = `
+                                <div class="explanation-item">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>You will need to pay <strong>${delta.toFixed(2)} EGP additional</strong> for this exchange</span>
+                                </div>
+                                <div class="explanation-item">
+                                    <i class="fas fa-truck"></i>
+                                    <span>Payment will be collected when the new item is delivered</span>
+                                </div>
+                            `;
+                        } else if (delta < 0) {
+                            const refundAmount = Math.abs(delta);
+                            deltaExplanation.innerHTML = `
+                                <div class="explanation-item">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span>You will receive a <strong>${refundAmount.toFixed(2)} EGP refund</strong></span>
+                                </div>
+                                <div class="explanation-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Refund will be processed after the exchange is completed</span>
+                                </div>
+                            `;
+                        } else {
+                            deltaExplanation.innerHTML = `
+                                <div class="explanation-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span><strong>No additional payment required</strong> - same price exchange</span>
+                                </div>
+                            `;
+                        }
 
-                if (newItemId) {
-                    const product = this.state.products.find(p => p.id === newItemId);
-                    if (product) {
-                        this.renderExchangeProductPreview(product);
+                        // Show product preview
+                        this.renderExchangeProductPreview(newProduct);
                         productPreview.style.display = 'block';
                     }
                 } else {
+                    priceDeltaDiv.style.display = 'none';
                     productPreview.style.display = 'none';
                 }
             };
 
-            oldItemSelect?.addEventListener('change', updatePriceDelta);
-            newItemSelect?.addEventListener('change', () => {
-                updatePriceDelta();
-                updateProductPreview();
+            newItemSelect?.addEventListener('change', updatePriceCalculation);
+
+            // Handle "Continue" buttons for each step (we'll add these to the form)
+            const step1ContinueBtn = document.createElement('button');
+            step1ContinueBtn.type = 'button';
+            step1ContinueBtn.className = 'btn btn-primary';
+            step1ContinueBtn.textContent = 'Continue to Order Selection';
+            step1ContinueBtn.style.marginTop = 'var(--spacing-md)';
+
+            const step2ContinueBtn = document.createElement('button');
+            step2ContinueBtn.type = 'button';
+            step2ContinueBtn.className = 'btn btn-primary';
+            step2ContinueBtn.textContent = 'Continue to Item Selection';
+            step2ContinueBtn.style.display = 'none';
+            step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
+
+            // Insert continue buttons
+            const firstFormSection = exchangeForm.querySelector('.form-section:first-child');
+            firstFormSection.appendChild(step1ContinueBtn);
+
+            orderSelectionSection.appendChild(step2ContinueBtn);
+
+            // Step 1 Continue Handler
+            step1ContinueBtn.addEventListener('click', () => {
+                const customerData = validateStep1();
+                if (customerData && showOrderHistory(customerData)) {
+                    step1ContinueBtn.style.display = 'none';
+                }
+            });
+
+            // Step 2 Continue Handler
+            step2ContinueBtn.addEventListener('click', () => {
+                const selectedOrderId = document.querySelector('#exchangeOrderList input[type="radio"]:checked')?.value;
+                if (!selectedOrderId) {
+                    this.notifications.error('Please select an order to exchange from.');
+                    return;
+                }
+
+                const customerData = validateStep1();
+                const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
+                const order = orders.find(o => o['Order ID'] === selectedOrderId);
+
+                if (order) {
+                    showItemSelection(order);
+                    step2ContinueBtn.style.display = 'none';
+                }
             });
 
             // Handle form submission
             exchangeForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const formData = new FormData(exchangeForm);
-                const exchangeData = {};
-
-                // Collect form data
-                for (let [key, value] of formData.entries()) {
-                    exchangeData[key] = value;
-                }
-
-                // Validate required fields
-                if (!exchangeData.phone || !exchangeData.email || !exchangeData.firstName ||
-                    !exchangeData.lastName || !exchangeData.address || !exchangeData.city) {
-                    this.notifications.error('Please fill in all required fields.');
-                    return;
-                }
-
-                // Validate email format
-                if (!Utils.validateEmail(exchangeData.email)) {
-                    this.notifications.error('Please enter a valid email address.');
-                    return;
-                }
-
-                const oldItemId = document.getElementById('exchangeOldItem')?.value;
+                const customerData = validateStep1();
                 const newItemId = document.getElementById('exchangeNewItem')?.value;
+                const note = exchangeForm.querySelector('textarea[name="note"]')?.value || '';
 
-                if (!oldItemId) {
-                    this.notifications.error('Please select an item to exchange.');
-                    return;
-                }
-                if (!newItemId) {
-                    this.notifications.error('Please select a new item.');
+                if (!customerData || !selectedOrder || !newItemId) {
+                    this.notifications.error('Please complete all steps.');
                     return;
                 }
 
-                const oldProduct = this.state.products.find(p => p.id === oldItemId);
                 const newProduct = this.state.products.find(p => p.id === newItemId);
-
-                if (!oldProduct || !newProduct) {
-                    this.notifications.error('Selected item not found. Please try again.');
+                if (!newProduct) {
+                    this.notifications.error('Selected item not found.');
                     return;
                 }
 
-                const oldPrice = oldProduct.price || 0;
+                const oldPrice = parseFloat(selectedOrder['Total']) || 0;
                 const newPrice = newProduct.price || 0;
                 const delta = newPrice - oldPrice;
-                const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
-
-                // Find selected order if available
-                let selectedOrder = null;
-                if (exchangeData.orderId) {
-                    const orders = getOrdersByPhoneOrEmail(exchangeData.phone, exchangeData.email);
-                    selectedOrder = orders.find(o => o['Order ID'] === exchangeData.orderId);
-                }
 
                 // Determine payment logic clearly
                 let codAmount = "0.00";
@@ -2672,32 +2748,29 @@ class GrindCTRLApp {
                 let exchangeAction = "";
 
                 if (delta > 0) {
-                    // Customer pays additional amount
                     codAmount = delta.toFixed(2);
                     paymentMethod = "Exchange Payment Required";
                     exchangeAction = `Customer must pay additional ${delta.toFixed(2)} EGP | Payment will be collected on delivery of new item`;
                 } else if (delta < 0) {
-                    // Customer gets refund
                     const refundAmount = Math.abs(delta);
                     codAmount = "0.00";
                     paymentMethod = "Exchange Refund";
                     exchangeAction = `Customer will receive ${refundAmount.toFixed(2)} EGP refund | Refund will be processed after exchange completion`;
                 } else {
-                    // Same price - no payment change
                     codAmount = "0.00";
                     paymentMethod = "Exchange - Same Price";
                     exchangeAction = `Exchange at same price | No additional payment required`;
                 }
 
-                // Create exchange payload similar to order data with clear pricing logic
+                // Create professional exchange payload
                 const exchangePayload = {
-                    "Order ID": exchangeData.orderId || Utils.generateOrderId(),
-                    "Customer Name": `${exchangeData.firstName} ${exchangeData.lastName}`,
-                    "Customer Email": exchangeData.email,
-                    "Phone": exchangeData.phone,
-                    "City": exchangeData.city,
-                    "Address": exchangeData.address,
-                    "Note": `Exchange | Old: [${oldProduct.sku || 'n/a'} – ${oldProduct.name} – ${oldPrice.toFixed(2)} EGP] | New: [${newProduct.sku || 'n/a'} – ${newProduct.name} – ${newPrice.toFixed(2)} EGP] | Price Difference: ${deltaText} EGP | Action Required: ${exchangeAction} | Comment: ${exchangeData.note || ''}${selectedOrder ? ` | Original Order: ${selectedOrder['Order ID']}` : ''}`,
+                    "Order ID": Utils.generateOrderId(),
+                    "Customer Name": `${customerData.firstName} ${customerData.lastName}`,
+                    "Customer Email": customerData.email,
+                    "Phone": customerData.phone,
+                    "City": customerData.city,
+                    "Address": customerData.address,
+                    "Note": `Exchange Request | Original Order: ${selectedOrder['Order ID']} | Original Product: ${selectedOrder['Product']} | Original Price: ${oldPrice.toFixed(2)} EGP | New Product: ${newProduct.name}${newProduct.sku ? ` (${newProduct.sku})` : ''} | New Price: ${newPrice.toFixed(2)} EGP | Price Difference: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} EGP | Action Required: ${exchangeAction} | Customer Note: ${note}`,
                     "COD Amount": codAmount,
                     "Tracking Number": "",
                     "Courier": "",
@@ -2705,16 +2778,14 @@ class GrindCTRLApp {
                     "Date": new Date().toISOString(),
                     "Status": "Exchange",
                     "Payment Method": paymentMethod,
-                    "Product": `${newProduct.name}${newProduct.sku ? ` (${newProduct.sku})` : ''} (Exchange for ${oldProduct.name})`,
+                    "Product": `${newProduct.name}${newProduct.sku ? ` (${newProduct.sku})` : ''} (Exchange)`,
                     "Quantity": "1",
                     "requestType": "exchange",
                     "exchangeDetails": {
-                        "oldProduct": {
-                            "id": oldProduct.id,
-                            "name": oldProduct.name,
-                            "sku": oldProduct.sku || 'n/a',
-                            "price": oldPrice
-                        },
+                        "originalOrderId": selectedOrder['Order ID'],
+                        "originalProduct": selectedOrder['Product'],
+                        "originalPrice": oldPrice,
+                        "originalPaymentMethod": selectedOrder['Payment Method'],
                         "newProduct": {
                             "id": newProduct.id,
                             "name": newProduct.name,
@@ -2724,7 +2795,8 @@ class GrindCTRLApp {
                         "priceDifference": delta,
                         "exchangeAction": exchangeAction,
                         "paymentRequired": delta > 0 ? delta : 0,
-                        "refundAmount": delta < 0 ? Math.abs(delta) : 0
+                        "refundAmount": delta < 0 ? Math.abs(delta) : 0,
+                        "customerNote": note
                     }
                 };
 
@@ -2742,9 +2814,17 @@ class GrindCTRLApp {
                 }
 
                 exchangeForm.reset();
+                orderSelectionSection.style.display = 'none';
+                itemSelectionSection.style.display = 'none';
+                exchangeSubmitBtn.style.display = 'none';
                 priceDeltaDiv.style.display = 'none';
                 productPreview.style.display = 'none';
-                orderListContainer.style.display = 'none';
+                document.getElementById('exchangeSummary').style.display = 'none';
+                exchangeOrderList.innerHTML = '';
+                step1ContinueBtn.style.display = 'block';
+                step2ContinueBtn.style.display = 'none';
+                currentStep = 1;
+                selectedOrder = null;
                 this.closeModal('exchange');
             });
         }
