@@ -1977,28 +1977,35 @@ class GrindCTRLApp {
         const cart = document.getElementById('floatingCart');
         const cartToggle = document.getElementById('cartToggle');
         
-        if (!cart || !cartToggle) return;
-
-        // Render cart items before opening
-        this.state.renderCartItems();
-
-        if (force !== null) {
-            cart.classList.toggle('open', force);
-        } else {
-            cart.classList.toggle('open');
+        if (!cart || !cartToggle) {
+            console.error('Cart elements not found');
+            return;
         }
 
-        if (cart.classList.contains('open')) {
-            this.toggleWishlist(false); // Close wishlist if open
-            document.body.style.overflow = 'hidden'; // Prevent body scroll
-        } else {
-            document.body.style.overflow = ''; // Restore body scroll
+        // Force render cart items
+        try {
+            this.state.renderCartItems();
+        } catch (error) {
+            console.error('Failed to render cart items', error);
         }
 
-        // Update cart count
+        // Explicit open/close logic
+        const isCurrentlyOpen = cart.classList.contains('open');
+        const shouldOpen = force !== null ? force : !isCurrentlyOpen;
+
+        if (shouldOpen) {
+            cart.classList.add('open');
+            this.toggleWishlist(false);
+            document.body.style.overflow = 'hidden';
+        } else {
+            cart.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // Guaranteed cart count update
         const cartCount = document.getElementById('cartCount');
         if (cartCount) {
-            cartCount.textContent = this.state.cart.length;
+            cartCount.textContent = this.state.cart.length || '0';
         }
     }
 
@@ -2282,6 +2289,24 @@ class GrindCTRLApp {
      * Open the exchange order modal.
      */
     openExchangeModal() {
+        const exchangeModal = document.getElementById('exchangeModal');
+        const exchangeForm = document.getElementById('exchangeForm');
+        const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
+        const step1Section = exchangeForm.querySelector('.form-section');
+        const itemSelectionSection = document.getElementById('itemSelectionSection');
+
+        if (!exchangeModal || !exchangeForm || !exchangeSubmitBtn || !step1Section || !itemSelectionSection) {
+            console.error('Exchange modal elements not found');
+            return;
+        }
+
+        // Reset form and sections
+        exchangeForm.reset();
+        step1Section.style.display = 'block';
+        itemSelectionSection.style.display = 'none';
+        exchangeSubmitBtn.style.display = 'none';
+
+        // Open modal
         this.openModal('exchange');
     }
 
