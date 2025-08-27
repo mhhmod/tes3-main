@@ -543,44 +543,39 @@ class GrindCTRLApp {
          */
         try {
             this.loading.show('init');
-
-            // Load product data.  If this fails, loadProducts() will fall
-            // back to embedded data.  Any error thrown beyond that will be
-            // caught below.
             await this.loadProducts();
-
-            // Initialize UI components
             this.initializeEventListeners();
             this.initializeNavigation();
             this.initializeModals();
             this.initializeBackToTop();
             this.initializeNewsletterForm();
             this.initializeContactForm();
-
-            // Initialize return/exchange form handlers so customers can request
-            // returns or exchanges from the footer at any time.
             this.initializeReturnExchangeForms();
-
-            // Render initial content
             this.renderCategories();
             this.renderProducts();
             this.state.updateCartUI();
             this.state.updateWishlistUI();
-
-            // Initialize scroll animations
             setTimeout(() => {
                 this.scrollAnimations = new ScrollAnimations();
             }, 100);
-
             console.log('GrindCTRL App initialized successfully');
-
         } catch (error) {
             console.error('Failed to initialize app:', error);
-            this.notifications.error('Failed to load the application. Please refresh the page.');
-            // In case of a critical failure, hide all loading tasks
+            if (this.notifications) {
+                this.notifications.error('Failed to load the application. ' + (error.message || error));
+            }
+            if (document.getElementById('loadingScreen')) {
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div class='loading-error'>
+                        <i class='fas fa-exclamation-circle'></i>
+                        <h2>Application Load Error</h2>
+                        <p>${error.message || error}</p>
+                        <button onclick='window.location.reload()'>Reload Page</button>
+                    </div>
+                `;
+            }
             this.loading.hideAll();
         } finally {
-            // Always hide the loading screen after initialization attempt
             this.loading.hide('init');
         }
     }
@@ -588,16 +583,34 @@ class GrindCTRLApp {
     async loadProducts() {
         try {
             const response = await fetch('./products.json');
-            if (!response.ok) throw new Error('Failed to fetch products');
-            
+            if (!response.ok) throw new Error('Failed to fetch products.json');
             const data = await response.json();
+            // Defensive checks
+            if (!data.products || !Array.isArray(data.products)) {
+                throw new Error('products.json is missing a valid "products" array');
+            }
+            if (!data.categories || !Array.isArray(data.categories)) {
+                throw new Error('products.json is missing a valid "categories" array');
+            }
             this.state.products = data.products;
             this.state.categories = data.categories;
-            
         } catch (error) {
             console.error('Error loading products:', error);
             // Fallback to embedded data
             this.loadFallbackData();
+            // Show error to user
+            if (window && window.app && window.app.notifications) {
+                window.app.notifications.error('Error loading products: ' + (error.message || error));
+            } else if (document.getElementById('loadingScreen')) {
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div class="loading-error">
+                        <i class='fas fa-exclamation-circle'></i>
+                        <h2>Product Data Error</h2>
+                        <p>${error.message || error}</p>
+                        <button onclick='window.location.reload()'>Reload Page</button>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -627,7 +640,6 @@ class GrindCTRLApp {
                 tags: ["HOT", "BESTSELLER"]
             }
         ];
-        
         this.state.categories = [
             { id: "all", name: "All Products", filter: null },
             { id: "tshirts", name: "T-Shirts", filter: "tshirts" }
