@@ -564,14 +564,75 @@
 
     <!-- Configuration -->
     <!-- Load configuration before main script so settings are available globally -->
-    <script src="config.js"></script>
+    <script src="config.js" onerror="handleScriptLoadError('config.js')"></script>
+    
     <!-- Main JavaScript -->
-    <!-- Append version parameter to force cache busting after updates -->
-    <!--
-        Use a unique query string on the script URL to force browsers to fetch the latest version.
-        Without cache busting, some clients might continue to serve stale JavaScript even after an
-        update. Bump this version string whenever the contents of main.js change.
-    -->
-    <script src="main.js?v=2025-08-24d"></script>
+    <script>
+        // Global script error handler
+        function handleScriptLoadError(scriptName) {
+            console.error(`Failed to load script: ${scriptName}`);
+            const errorToast = document.createElement('div');
+            errorToast.className = 'error-toast';
+            errorToast.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                Failed to load ${scriptName}. Please refresh the page.
+            `;
+            document.body.appendChild(errorToast);
+        }
+
+        // Fallback initialization if main script fails
+        window.addEventListener('error', function(event) {
+            if (event.filename && event.filename.includes('main.js')) {
+                console.error('Main script load failed:', event.message);
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div class="loading-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h2>Application Load Error</h2>
+                        <p>We're having trouble starting the application. Please try refreshing the page.</p>
+                        <button onclick="window.location.reload()">Reload Page</button>
+                    </div>
+                `;
+            }
+        });
+    </script>
+
+    <!-- Main JavaScript with error handling -->
+    <script 
+        src="main.js?v=2025-08-24d" 
+        onerror="handleScriptLoadError('main.js')"
+    ></script>
+
+    <style>
+        .error-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ff4d4f;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loading-error {
+            text-align: center;
+            color: #ff4d4f;
+            padding: 20px;
+        }
+
+        .loading-error button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
 </body>
 </html>
