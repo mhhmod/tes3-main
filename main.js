@@ -2370,7 +2370,7 @@ class GrindCTRLApp {
             });
 
             container.style.display = 'block';
-            if (submitBtn) { submitBtn.style.display = 'inline-block'; submitBtn.disabled = true; }
+            if (submitBtn) submitBtn.disabled = true;
 
             // Enable submit when an order is chosen
             container.addEventListener('change', (e) => {
@@ -2382,17 +2382,6 @@ class GrindCTRLApp {
                     });
                     // Add selected class to the selected item
                     e.target.closest('.order-item').classList.add('selected');
-                }
-            });
-
-            // Allow clicking anywhere on the card to select its radio
-            container.addEventListener('click', (ev) => {
-                const card = ev.target.closest('.order-item');
-                if (!card || !container.contains(card)) return;
-                const r = card.querySelector('input[type="radio"]');
-                if (r) {
-                    r.checked = true;
-                    r.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
         };
@@ -2423,17 +2412,6 @@ class GrindCTRLApp {
                     return;
                 }
                 populateOrderSelect(container, orders, submitBtn);
-            });
-
-            // Allow clicking anywhere on the card to select its radio
-            container.addEventListener('click', (ev) => {
-                const card = ev.target.closest('.order-item');
-                if (!card || !container.contains(card)) return;
-                const r = card.querySelector('input[type="radio"]');
-                if (r) {
-                    r.checked = true;
-                    r.dispatchEvent(new Event('change', { bubbles: true }));
-                }
             });
         };
 
@@ -2932,9 +2910,6 @@ window.closeSuccessModal = function() {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new GrindCTRLApp();
-    // Failsafe: hide loading screen after load or 7s
-    window.addEventListener('load', () => { try { window.app.loading.hideAll(); } catch(e) { try { document.getElementById('loadingScreen')?.classList.add('hidden'); } catch(_){} } });
-    setTimeout(() => { try { window.app.loading.hideAll(); } catch(e) { try { document.getElementById('loadingScreen')?.classList.add('hidden'); } catch(_){} } }, 7000);
 });
 
 // ===== SERVICE WORKER REGISTRATION =====
