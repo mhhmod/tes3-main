@@ -566,36 +566,54 @@
     <!-- Load configuration before main script so settings are available globally -->
     <script src="config.js" onerror="handleScriptLoadError('config.js')"></script>
     
-    <!-- Main JavaScript -->
+    <!-- Test Script -->
     <script>
+        console.log('Page loaded successfully');
+        console.log('DOM ready:', document.readyState);
+        console.log('Config loaded:', typeof window.CONFIG !== 'undefined');
+        
         // Global script error handler
-        function handleScriptLoadError(scriptName) {
-            console.error(`Failed to load script: ${scriptName}`);
+        function handleScriptLoadError(scriptName, errorMsg) {
+            console.error(`Failed to load script: ${scriptName}`, errorMsg || '');
             const errorToast = document.createElement('div');
             errorToast.className = 'error-toast';
             errorToast.innerHTML = `
                 <i class="fas fa-exclamation-triangle"></i>
-                Failed to load ${scriptName}. Please refresh the page.
+                Failed to load ${scriptName}. ${errorMsg ? 'Error: ' + errorMsg : 'Please refresh the page.'}
             `;
             document.body.appendChild(errorToast);
+            // Also show in loading screen if present
+            if (document.getElementById('loadingScreen')) {
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div class="loading-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h2>Application Load Error</h2>
+                        <p>Script: ${scriptName}</p>
+                        <p>${errorMsg ? errorMsg : 'Unknown error.'}</p>
+                        <button onclick="window.location.reload()">Reload Page</button>
+                    </div>
+                `;
+            }
         }
 
         // Fallback initialization if main script fails
         window.addEventListener('error', function(event) {
             if (event.filename && event.filename.includes('main.js')) {
                 console.error('Main script load failed:', event.message);
-                document.getElementById('loadingScreen').innerHTML = `
-                    <div class="loading-error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <h2>Application Load Error</h2>
-                        <p>We're having trouble starting the application. Please try refreshing the page.</p>
-                        <button onclick="window.location.reload()">Reload Page</button>
-                    </div>
-                `;
+                if (document.getElementById('loadingScreen')) {
+                    document.getElementById('loadingScreen').innerHTML = `
+                        <div class="loading-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <h2>Application Load Error</h2>
+                            <p>main.js: ${event.message}</p>
+                            <button onclick="window.location.reload()">Reload Page</button>
+                        </div>
+                    `;
+                }
             }
         });
     </script>
-
+    
     <!-- Main JavaScript with error handling -->
     <script 
         src="main.js?v=2025-08-24d" 

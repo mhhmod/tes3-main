@@ -526,6 +526,7 @@ class ScrollAnimations {
 // ===== MAIN APPLICATION CLASS =====
 class GrindCTRLApp {
     constructor() {
+        console.log('GrindCTRLApp constructor called');
         this.state = new AppState();
         this.notifications = new NotificationManager();
         this.loading = new LoadingManager();
@@ -561,15 +562,15 @@ class GrindCTRLApp {
             console.log('GrindCTRL App initialized successfully');
         } catch (error) {
             console.error('Failed to initialize app:', error);
-            if (this.notifications) {
-                this.notifications.error('Failed to load the application. ' + (error.message || error));
-            }
+            // Use direct DOM manipulation to avoid circular dependencies
             if (document.getElementById('loadingScreen')) {
                 document.getElementById('loadingScreen').innerHTML = `
                     <div class='loading-error'>
                         <i class='fas fa-exclamation-circle'></i>
                         <h2>Application Load Error</h2>
-                        <p>${error.message || error}</p>
+                        <p><strong>Error:</strong> ${error.message || error}</p>
+                        <p><strong>Type:</strong> ${error.name || 'Unknown'}</p>
+                        <p><strong>Stack:</strong> ${error.stack ? error.stack.split('\n')[0] : 'Not available'}</p>
                         <button onclick='window.location.reload()'>Reload Page</button>
                     </div>
                 `;
@@ -598,19 +599,8 @@ class GrindCTRLApp {
             console.error('Error loading products:', error);
             // Fallback to embedded data
             this.loadFallbackData();
-            // Show error to user
-            if (window && window.app && window.app.notifications) {
-                window.app.notifications.error('Error loading products: ' + (error.message || error));
-            } else if (document.getElementById('loadingScreen')) {
-                document.getElementById('loadingScreen').innerHTML = `
-                    <div class="loading-error">
-                        <i class='fas fa-exclamation-circle'></i>
-                        <h2>Product Data Error</h2>
-                        <p>${error.message || error}</p>
-                        <button onclick='window.location.reload()'>Reload Page</button>
-                    </div>
-                `;
-            }
+            // Log error but don't try to show notifications yet
+            console.warn('Using fallback product data due to:', error.message || error);
         }
     }
 
