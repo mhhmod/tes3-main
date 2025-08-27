@@ -2369,19 +2369,32 @@ class GrindCTRLApp {
                 container.appendChild(item);
             });
 
-            container.style.display = 'block';
-            if (submitBtn) submitBtn.disabled = true;
+            \1
+            if (submitBtn) { submitBtn.style.display = 'inline-block'; }
 
             // Enable submit when an order is chosen
             container.addEventListener('change', (e) => {
                 if (e.target && e.target.matches('input[type="radio"]')) {
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.display = 'inline-block'; }
+                    if (submitBtn) submitBtn.disabled = false;
                     // Remove selected class from all items
                     container.querySelectorAll('.order-item').forEach(item => {
                         item.classList.remove('selected');
                     });
                     // Add selected class to the selected item
                     e.target.closest('.order-item').classList.add('selected');
+                }
+            });
+
+            // Also support clicking anywhere on the card to select the radio
+            /*__ORDER_ITEM_CLICK_HANDLER__*/
+            container.addEventListener('click', (e) => {
+                const card = e.target.closest('.order-item');
+                if (!card || !container.contains(card)) return;
+                const r = card.querySelector('input[type="radio"]');
+                if (r) {
+                    r.checked = true;
+                    // Fire change to enable Continue button and add .selected class
+                    r.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
         };
@@ -2413,6 +2426,19 @@ class GrindCTRLApp {
                 }
                 populateOrderSelect(container, orders, submitBtn);
             });
+
+            // Also support clicking anywhere on the card to select the radio
+            /*__ORDER_ITEM_CLICK_HANDLER__*/
+            container.addEventListener('click', (e) => {
+                const card = e.target.closest('.order-item');
+                if (!card || !container.contains(card)) return;
+                const r = card.querySelector('input[type="radio"]');
+                if (r) {
+                    r.checked = true;
+                    // Fire change to enable Continue button and add .selected class
+                    r.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
         };
 
         // Return and Exchange forms now use full customer details (no phone lookup)
@@ -2442,7 +2468,6 @@ class GrindCTRLApp {
                     const orders = getOrdersByPhoneOrEmail(phone, email);
                     if (orders.length > 0) {
                         populateOrderSelect(orderListContainer, orders, step2ContinueBtn);
-                    if (step2ContinueBtn) { step2ContinueBtn.style.display = 'inline-block'; step2ContinueBtn.disabled = true; }
                         orderListContainer.style.display = 'block';
 
                         // Pre-fill order ID if only one order found
@@ -2452,17 +2477,17 @@ class GrindCTRLApp {
                             const radio = orderListContainer.querySelector('input[type="radio"]');
                             if (radio) {
                                 radio.checked = true;
-                                if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = false;
+                                step2ContinueBtn.disabled = false;
                                 radio.closest('.order-item').classList.add('selected');
                             }
                         }
                     } else {
                         orderListContainer.style.display = 'none';
-                        if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = true;
+                        step2ContinueBtn.disabled = true;
                     }
                 } else {
                     orderListContainer.style.display = 'none';
-                    if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = true;
+                    step2ContinueBtn.disabled = true;
                 }
             };
 
@@ -2599,7 +2624,6 @@ class GrindCTRLApp {
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
                 if (orders.length > 0) {
                     populateOrderSelect(exchangeOrderList, orders, step2ContinueBtn);
-                    if (step2ContinueBtn) { step2ContinueBtn.style.display = 'inline-block'; step2ContinueBtn.disabled = true; }
                     orderSelectionSection.style.display = 'block';
                     currentStep = 2;
 
@@ -2611,7 +2635,7 @@ class GrindCTRLApp {
                         const firstRadio = exchangeOrderList.querySelector('input[type="radio"]');
                         if (firstRadio) {
                             firstRadio.checked = true;
-                            if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = false;
+                            step2ContinueBtn.disabled = false;
                             firstRadio.closest('.order-item').classList.add('selected');
                         }
                     }
