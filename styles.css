@@ -2766,10 +2766,290 @@ textarea:focus {
 /* Toast fade-out support */
 .toast.fade-out { opacity: 0; transition: opacity .25s ease; }
 
-/* Toast z-index and gap for accessibility and stacking */
-#notificationToast {
-  z-index: var(--z-toast, 1200) !important;
+/* New Toast System - Individual Elements */
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 300px;
+  max-width: 500px;
+  background: var(--background-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
-#notificationToast .toast {
-  margin-bottom: 8px;
+
+.notification-toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notification-toast.success {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, var(--background-surface), rgba(34, 197, 94, 0.05));
+}
+
+.notification-toast.error {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, var(--background-surface), rgba(239, 68, 68, 0.05));
+}
+
+.notification-toast.warning {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, var(--background-surface), rgba(245, 158, 11, 0.05));
+}
+
+.notification-toast.info {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--background-surface), rgba(59, 130, 246, 0.05));
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.toast-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.notification-toast.success .toast-icon {
+  color: #22c55e;
+}
+
+.notification-toast.error .toast-icon {
+  color: #ef4444;
+}
+
+.notification-toast.warning .toast-icon {
+  color: #f59e0b;
+}
+
+.notification-toast.info .toast-icon {
+  color: var(--primary-color);
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+  background: var(--background-hover);
+}
+
+/* Multiple toasts stacking */
+.notification-toast:nth-child(2) {
+  top: 90px;
+}
+
+.notification-toast:nth-child(3) {
+  top: 160px;
+}
+
+.notification-toast:nth-child(4) {
+  top: 230px;
+}
+
+.notification-toast:nth-child(5) {
+  top: 300px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .notification-toast {
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+  }
+
+  .toast-content {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+  }
+
+  .toast-message {
+    font-size: 0.85rem;
+  }
+
+  .notification-toast:nth-child(2) { top: 80px; }
+  .notification-toast:nth-child(3) { top: 140px; }
+  .notification-toast:nth-child(4) { top: 200px; }
+  .notification-toast:nth-child(5) { top: 260px; }
+}
+
+@media (max-width: 320px) {
+  .notification-toast {
+    right: 5px;
+    left: 5px;
+  }
+}
+
+/* Enhanced Responsive Design Improvements */
+@media (max-width: 768px) {
+    /* Form improvements for mobile */
+    .form-section {
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .form-row .form-group {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    /* Modal improvements */
+    .modal-content {
+        margin: var(--spacing-sm);
+        max-height: calc(100vh - 2 * var(--spacing-sm));
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: var(--spacing-md);
+    }
+
+    .modal-body {
+        padding: 0;
+    }
+
+    /* Button improvements */
+    .btn {
+        min-height: 44px; /* iOS touch target */
+        font-size: 1rem;
+    }
+
+    /* Product grid improvements */
+    .products-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--spacing-md);
+    }
+
+    .product-card {
+        min-height: auto;
+    }
+
+    /* Header improvements */
+    .header-content {
+        padding: var(--spacing-md);
+    }
+
+    .nav {
+        gap: var(--spacing-sm);
+    }
+
+    /* Cart/Sidebar improvements */
+    .floating-cart, .wishlist-panel {
+        width: 100%;
+        left: 0;
+        right: 0;
+        top: 70px;
+        height: calc(100vh - 70px);
+        border-radius: 0;
+    }
+
+    /* Order list improvements */
+    .order-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .order-item {
+        padding: var(--spacing-sm);
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .container {
+        padding: 0 var(--spacing-sm);
+    }
+
+    .hero-content {
+        padding: var(--spacing-lg) 0;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    /* Form ultra-compact */
+    .form-section {
+        padding: var(--spacing-sm);
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    /* Modal improvements for small screens */
+    .modal-content {
+        margin: var(--spacing-xs);
+    }
+
+    /* Product preview adjustments */
+    .preview-images {
+        flex-direction: column;
+    }
+
+    .preview-main-image {
+        width: 100%;
+        height: 200px;
+    }
+}
+
+@media (max-width: 320px) {
+    /* iPhone SE and similar */
+    .container {
+        padding: 0 var(--spacing-xs);
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+    }
+
+    .btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.9rem;
+    }
+
+    .form-section {
+        padding: var(--spacing-xs);
+    }
 }

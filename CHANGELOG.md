@@ -139,10 +139,83 @@ This patch implements surgical, in-place edits to the vanilla-JS storefront whil
   - Proper status values ("Return", "Exchange")
   - Detailed notes preserved for exchange requests
 
+### Order Linking & Auto-Discovery System ✅
+**Files:** `index.html`, `main.js`
+**Enhancement:** Automatic order lookup and linking system
+- **Phone/Email Auto-Discovery:** Forms automatically show customer's previous orders when phone/email is entered
+- **Smart Pre-filling:** Order ID auto-populated when only one order found
+- **Visual Order List:** Clickable order history with full order details
+- **Enhanced Lookup Functions:** `getOrdersByEmail()` and `getOrdersByPhoneOrEmail()` for comprehensive order discovery
+- **Real-time Updates:** Order list appears/disappears dynamically as user types
+
+### Clear Pricing Logic in Webhooks ✅
+**Files:** `main.js`
+**Enhancement:** Crystal clear pricing and refund logic in webhook payloads
+- **Exchange Pricing Logic:**
+  - `Price Difference: +40.00 EGP | Action Required: Customer must pay additional 40.00 EGP | Payment will be collected on delivery`
+  - `Price Difference: -20.00 EGP | Action Required: Customer will receive 20.00 EGP refund | Refund will be processed after exchange`
+  - `Price Difference: 0.00 EGP | Action Required: Exchange at same price | No additional payment required`
+
+- **Return Refund Logic:**
+  - `Refund Amount: 150.00 EGP | Refund Method: Customer will be contacted for refund arrangement`
+  - `Original Payment: Cash on Delivery | Original Order: GRIND-2025-001`
+
+### Radical Toast System Overhaul ✅
+**Files:** `main.js`, `styles.css`
+**Fix:** Complete elimination of toast lag and performance issues
+- **Individual Toast Elements:** Each toast creates its own DOM element (no reuse conflicts)
+- **No Race Conditions:** Impossible to have timing conflicts or lag
+- **Simplified Logic:** Removed complex pause/resume functionality entirely
+- **Better Visual Design:** Enhanced styling with type-specific colors and animations
+- **Responsive Stacking:** Up to 5 toasts can stack properly on screen
+- **Auto-Cleanup:** Toasts remove themselves completely after animation
+
+### Enhanced Responsive Design ✅
+**Files:** `styles.css`
+**Improvements:** Comprehensive mobile/tablet optimization
+- **Form Improvements:** Better spacing, touch targets (44px minimum), stacked layouts
+- **Modal Enhancements:** Scrollable content, better margins, mobile-optimized sizing
+- **Product Grid:** Responsive columns, improved gaps
+- **Touch Targets:** All interactive elements meet iOS/Android guidelines
+- **Typography Scaling:** Responsive font sizes across breakpoints
+- **Order List:** Mobile-optimized scrolling and sizing
+
+### Webhook Payload Standardization ✅
+**Enhanced Structure:**
+```javascript
+// Return Payload
+{
+    "Order ID": "GRIND-2025-001",
+    "Status": "Return",
+    "Payment Method": "Refund to Customer",
+    "Note": "Return Reason: Item doesn't fit | Original Order: GRIND-2025-001 | Original Payment: Cash on Delivery | Refund Amount: 150.00 EGP | Refund Method: Customer will be contacted for refund arrangement",
+    "returnDetails": {
+        "returnReason": "Item doesn't fit",
+        "originalOrderId": "GRIND-2025-001",
+        "refundAmount": "150.00",
+        "refundMethod": "Refund to Customer"
+    }
+}
+
+// Exchange Payload
+{
+    "Order ID": "GRIND-2025-002",
+    "Status": "Exchange", 
+    "Payment Method": "Exchange Payment Required",
+    "Note": "Exchange | Old: [HOODIE-001 – Premium Hoodie – 120.00 EGP] | New: [TSHIRT-002 – Street Tee – 80.00 EGP] | Price Difference: -40.00 EGP | Action Required: Customer will receive 40.00 EGP refund | Refund will be processed after exchange completion",
+    "exchangeDetails": {
+        "priceDifference": -40,
+        "exchangeAction": "Customer will receive 40.00 EGP refund | Refund will be processed after exchange completion",
+        "paymentRequired": 0,
+        "refundAmount": 40
+    }
+}
+```
+
 ## Files Modified
-- `index.html` - Modal structures, navigation attributes, form enhancements, product preview HTML, return/exchange form redesign
-- `main.js` - Core functionality, validation, event handlers, webhook logic, toast simplification, product preview logic, return/exchange payload standardization
-- `styles.css` - Accessibility enhancements, mobile navigation, form styling, product preview styling
+- `index.html` - Modal structures, navigation attributes, form enhancements, product preview HTML, return/exchange form redesign, order list containers
+- `main.js` - Core functionality, validation, event handlers, webhook logic, toast system overhaul, order linking system, enhanced pricing logic, responsive improvements
+- `styles.css` - Accessibility enhancements, mobile navigation, form styling, product preview styling, toast system redesign, comprehensive responsive design improvements
 
 ## Bundle Size Impact
 - **+5 KB gzip MAX increase maintained**

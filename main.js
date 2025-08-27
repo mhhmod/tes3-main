@@ -365,40 +365,59 @@ class NotificationManager {
     }
 
     show(message, type = 'info', duration = 3500) {
-        if (!this.container) return;
+        // Radical simplification: use a completely new toast container each time
+        // This eliminates all race conditions and performance issues
 
-        // Clear any existing toast immediately
-        if (this.currentTimeout) {
-            clearTimeout(this.currentTimeout);
-            this.currentTimeout = null;
-        }
-        if (this.watchdogTimeout) {
-            clearTimeout(this.watchdogTimeout);
-            this.watchdogTimeout = null;
-        }
+        const toastId = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Force hide current toast if visible
-        this.container.classList.remove('show');
+        // Create new toast element
+        const toastElement = document.createElement('div');
+        toastElement.id = toastId;
+        toastElement.className = `notification-toast show ${type}`;
+        toastElement.innerHTML = `
+            <div class="toast-content">
+                <i class="toast-icon fas ${this.getIconClass(type)}"></i>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
 
-        const notification = {
-            id: Date.now(),
-            message,
-            type,
-            duration
-        };
+        // Add to DOM
+        document.body.appendChild(toastElement);
 
-        this.notifications.push(notification);
-        this.render(notification);
+        // Force reflow to ensure animation works
+        toastElement.offsetHeight;
 
-        // Simple timeout - no pause/resume complexity
-        this.currentTimeout = setTimeout(() => {
-            this.hide(notification.id);
+        // Auto-remove after duration
+        setTimeout(() => {
+            if (toastElement.parentElement) {
+                toastElement.classList.remove('show');
+                setTimeout(() => {
+                    if (toastElement.parentElement) {
+                        toastElement.remove();
+                    }
+                }, 300); // Wait for fade out animation
+            }
         }, duration);
 
-        // Watchdog: force close at 8s from show()
-        this.watchdogTimeout = setTimeout(() => {
-            this.hide(notification.id);
-        }, 8000);
+        // Also remove after 10 seconds as absolute maximum (watchdog)
+        setTimeout(() => {
+            if (toastElement.parentElement) {
+                toastElement.remove();
+            }
+        }, 10000);
+    }
+
+    getIconClass(type) {
+        const iconMap = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            info: 'fa-info-circle',
+            warning: 'fa-exclamation-triangle'
+        };
+        return iconMap[type] || iconMap.info;
     }
 
     render(notification) {
@@ -2273,6 +2292,29 @@ class GrindCTRLApp {
             }
         };
 
+        const getOrdersByEmail = (email) => {
+            try {
+                const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
+                return orders.filter(o => (o['Customer Email'] && o['Customer Email'].toLowerCase() === email.toLowerCase()));
+            } catch (error) {
+                console.warn('Failed to load orders for email lookup:', error);
+                return [];
+            }
+        };
+
+        const getOrdersByPhoneOrEmail = (phone, email) => {
+            const phoneOrders = phone ? getOrdersByPhone(phone) : [];
+            const emailOrders = email ? getOrdersByEmail(email) : [];
+
+            // Combine and remove duplicates based on Order ID
+            const combined = [...phoneOrders, ...emailOrders];
+            const uniqueOrders = combined.filter((order, index, self) =>
+                index === self.findIndex(o => o['Order ID'] === order['Order ID'])
+            );
+
+            return uniqueOrders;
+        };
+
         /**
          * Populate the order list container with clickable radio items.  Each
          * order is represented as a radio input inside a styled div.  The
@@ -2346,6 +2388,45 @@ class GrindCTRLApp {
         // Submit handlers for return and exchange forms
         const returnForm = document.getElementById('returnForm');
         if (returnForm) {
+            // Add order lookup functionality
+            const phoneInput = returnForm.querySelector('input[name="phone"]');
+            const emailInput = returnForm.querySelector('input[name="email"]');
+            const orderIdInput = returnForm.querySelector('input[name="orderId"]');
+            const orderListContainer = document.createElement('div');
+            orderListContainer.id = 'returnOrderList';
+            orderListContainer.className = 'order-list';
+            orderListContainer.style.display = 'none';
+
+            // Insert order list after the order ID field
+            if (orderIdInput) {
+                orderIdInput.parentNode.appendChild(orderListContainer);
+            }
+
+            const updateOrderList = () => {
+                const phone = phoneInput?.value.trim();
+                const email = emailInput?.value.trim();
+
+                if (phone || email) {
+                    const orders = getOrdersByPhoneOrEmail(phone, email);
+                    if (orders.length > 0) {
+                        populateOrderSelect(orderListContainer, orders);
+                        orderListContainer.style.display = 'block';
+
+                        // Pre-fill order ID if only one order found
+                        if (orders.length === 1 && orderIdInput) {
+                            orderIdInput.value = orders[0]['Order ID'];
+                        }
+                    } else {
+                        orderListContainer.style.display = 'none';
+                    }
+                } else {
+                    orderListContainer.style.display = 'none';
+                }
+            };
+
+            phoneInput?.addEventListener('input', updateOrderList);
+            emailInput?.addEventListener('input', updateOrderList);
+
             returnForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
@@ -2371,7 +2452,28 @@ class GrindCTRLApp {
                     return;
                 }
 
-                // Create return payload similar to order data
+                // Find selected order if available
+                let selectedOrder = null;
+                if (returnData.orderId) {
+                    const orders = getOrdersByPhoneOrEmail(returnData.phone, returnData.email);
+                    selectedOrder = orders.find(o => o['Order ID'] === returnData.orderId);
+                }
+
+                // Calculate refund amount and payment method
+                let refundAmount = "0.00";
+                let paymentMethod = "Return Request";
+                let originalPaymentMethod = "Unknown";
+
+                if (selectedOrder) {
+                    // If original order was COD, customer will get refund
+                    if (selectedOrder['Payment Method'] === 'Cash on Delivery') {
+                        refundAmount = selectedOrder['Total'] || selectedOrder['COD Amount'] || "0.00";
+                        paymentMethod = "Refund to Customer";
+                        originalPaymentMethod = selectedOrder['Payment Method'];
+                    }
+                }
+
+                // Create return payload similar to order data with clear refund information
                 const returnPayload = {
                     "Order ID": returnData.orderId || Utils.generateOrderId(),
                     "Customer Name": `${returnData.firstName} ${returnData.lastName}`,
@@ -2379,34 +2481,82 @@ class GrindCTRLApp {
                     "Phone": returnData.phone,
                     "City": returnData.city,
                     "Address": returnData.address,
-                    "Note": `Return Reason: ${returnData.returnReason}`,
-                    "COD Amount": "0.00",
+                    "Note": `Return Reason: ${returnData.returnReason}${selectedOrder ? ` | Original Order: ${selectedOrder['Order ID']} | Original Payment: ${originalPaymentMethod} | Refund Amount: ${refundAmount} EGP | Refund Method: Customer will be contacted for refund arrangement` : ''}`,
+                    "COD Amount": refundAmount,
                     "Tracking Number": "",
                     "Courier": "",
-                    "Total": "0.00",
+                    "Total": refundAmount,
                     "Date": new Date().toISOString(),
                     "Status": "Return",
-                    "Payment Method": "Return Request",
-                    "Product": "Return Request",
-                    "Quantity": "1",
-                    "requestType": "return"
+                    "Payment Method": paymentMethod,
+                    "Product": selectedOrder ? selectedOrder['Product'] : "Return Request",
+                    "Quantity": selectedOrder ? selectedOrder['Quantity'] : "1",
+                    "requestType": "return",
+                    "returnDetails": {
+                        "returnReason": returnData.returnReason,
+                        "originalOrderId": returnData.orderId || null,
+                        "originalOrder": selectedOrder || null,
+                        "refundAmount": refundAmount,
+                        "refundMethod": paymentMethod,
+                        "originalPaymentMethod": originalPaymentMethod
+                    }
                 };
 
                 const success = await this.sendReturnOrExchangeWebhook(returnPayload, 'return');
                 if (success) {
-                    this.notifications.success('Return request submitted! Our support team will contact you soon.');
+                    this.notifications.success('Return request submitted! Our support team will contact you soon regarding the refund.');
                 } else {
                     this.notifications.error('Failed to submit return request. Please try again.');
                 }
 
                 returnForm.reset();
+                orderListContainer.style.display = 'none';
                 this.closeModal('return');
             });
         }
         const exchangeForm = document.getElementById('exchangeForm');
         if (exchangeForm) {
+            // Add order lookup functionality
+            const phoneInput = exchangeForm.querySelector('input[name="phone"]');
+            const emailInput = exchangeForm.querySelector('input[name="email"]');
+            const orderIdInput = exchangeForm.querySelector('input[name="orderId"]');
+            const orderListContainer = document.createElement('div');
+            orderListContainer.id = 'exchangeOrderList';
+            orderListContainer.className = 'order-list';
+            orderListContainer.style.display = 'none';
+
+            // Insert order list after the order ID field
+            if (orderIdInput) {
+                orderIdInput.parentNode.appendChild(orderListContainer);
+            }
+
             // Populate product dropdowns
             this.populateExchangeDropdowns();
+
+            const updateOrderList = () => {
+                const phone = phoneInput?.value.trim();
+                const email = emailInput?.value.trim();
+
+                if (phone || email) {
+                    const orders = getOrdersByPhoneOrEmail(phone, email);
+                    if (orders.length > 0) {
+                        populateOrderSelect(orderListContainer, orders);
+                        orderListContainer.style.display = 'block';
+
+                        // Pre-fill order ID if only one order found
+                        if (orders.length === 1 && orderIdInput) {
+                            orderIdInput.value = orders[0]['Order ID'];
+                        }
+                    } else {
+                        orderListContainer.style.display = 'none';
+                    }
+                } else {
+                    orderListContainer.style.display = 'none';
+                }
+            };
+
+            phoneInput?.addEventListener('input', updateOrderList);
+            emailInput?.addEventListener('input', updateOrderList);
 
             // Handle dropdown changes for price delta calculation and product preview
             const oldItemSelect = document.getElementById('exchangeOldItem');
@@ -2509,7 +2659,37 @@ class GrindCTRLApp {
                 const delta = newPrice - oldPrice;
                 const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
 
-                // Create exchange payload similar to order data with detailed note
+                // Find selected order if available
+                let selectedOrder = null;
+                if (exchangeData.orderId) {
+                    const orders = getOrdersByPhoneOrEmail(exchangeData.phone, exchangeData.email);
+                    selectedOrder = orders.find(o => o['Order ID'] === exchangeData.orderId);
+                }
+
+                // Determine payment logic clearly
+                let codAmount = "0.00";
+                let paymentMethod = "Exchange Request";
+                let exchangeAction = "";
+
+                if (delta > 0) {
+                    // Customer pays additional amount
+                    codAmount = delta.toFixed(2);
+                    paymentMethod = "Exchange Payment Required";
+                    exchangeAction = `Customer must pay additional ${delta.toFixed(2)} EGP | Payment will be collected on delivery of new item`;
+                } else if (delta < 0) {
+                    // Customer gets refund
+                    const refundAmount = Math.abs(delta);
+                    codAmount = "0.00";
+                    paymentMethod = "Exchange Refund";
+                    exchangeAction = `Customer will receive ${refundAmount.toFixed(2)} EGP refund | Refund will be processed after exchange completion`;
+                } else {
+                    // Same price - no payment change
+                    codAmount = "0.00";
+                    paymentMethod = "Exchange - Same Price";
+                    exchangeAction = `Exchange at same price | No additional payment required`;
+                }
+
+                // Create exchange payload similar to order data with clear pricing logic
                 const exchangePayload = {
                     "Order ID": exchangeData.orderId || Utils.generateOrderId(),
                     "Customer Name": `${exchangeData.firstName} ${exchangeData.lastName}`,
@@ -2517,15 +2697,15 @@ class GrindCTRLApp {
                     "Phone": exchangeData.phone,
                     "City": exchangeData.city,
                     "Address": exchangeData.address,
-                    "Note": `Exchange | Old: [${oldProduct.sku || 'n/a'} – ${oldProduct.name} – ${oldPrice.toFixed(2)} EGP] | New: [${newProduct.sku || 'n/a'} – ${newProduct.name} – ${newPrice.toFixed(2)} EGP] | Delta: ${deltaText} EGP | Comment: ${exchangeData.note || ''}`,
-                    "COD Amount": delta >= 0 ? delta.toFixed(2) : "0.00",
+                    "Note": `Exchange | Old: [${oldProduct.sku || 'n/a'} – ${oldProduct.name} – ${oldPrice.toFixed(2)} EGP] | New: [${newProduct.sku || 'n/a'} – ${newProduct.name} – ${newPrice.toFixed(2)} EGP] | Price Difference: ${deltaText} EGP | Action Required: ${exchangeAction} | Comment: ${exchangeData.note || ''}${selectedOrder ? ` | Original Order: ${selectedOrder['Order ID']}` : ''}`,
+                    "COD Amount": codAmount,
                     "Tracking Number": "",
                     "Courier": "",
                     "Total": newPrice.toFixed(2),
                     "Date": new Date().toISOString(),
                     "Status": "Exchange",
-                    "Payment Method": delta >= 0 ? "Exchange Payment Required" : "Exchange Refund",
-                    "Product": `${newProduct.name}${newProduct.sku ? ` (${newProduct.sku})` : ''} (Exchange)`,
+                    "Payment Method": paymentMethod,
+                    "Product": `${newProduct.name}${newProduct.sku ? ` (${newProduct.sku})` : ''} (Exchange for ${oldProduct.name})`,
                     "Quantity": "1",
                     "requestType": "exchange",
                     "exchangeDetails": {
@@ -2541,13 +2721,22 @@ class GrindCTRLApp {
                             "sku": newProduct.sku || 'n/a',
                             "price": newPrice
                         },
-                        "priceDifference": delta
+                        "priceDifference": delta,
+                        "exchangeAction": exchangeAction,
+                        "paymentRequired": delta > 0 ? delta : 0,
+                        "refundAmount": delta < 0 ? Math.abs(delta) : 0
                     }
                 };
 
                 const success = await this.sendReturnOrExchangeWebhook(exchangePayload, 'exchange');
                 if (success) {
-                    this.notifications.success('Exchange request submitted! Our support team will contact you soon.');
+                    if (delta > 0) {
+                        this.notifications.success(`Exchange request submitted! You will need to pay ${delta.toFixed(2)} EGP additional for the new item.`);
+                    } else if (delta < 0) {
+                        this.notifications.success(`Exchange request submitted! You will receive ${Math.abs(delta).toFixed(2)} EGP refund.`);
+                    } else {
+                        this.notifications.success('Exchange request submitted! No additional payment required.');
+                    }
                 } else {
                     this.notifications.error('Failed to submit exchange request. Please try again.');
                 }
@@ -2555,6 +2744,7 @@ class GrindCTRLApp {
                 exchangeForm.reset();
                 priceDeltaDiv.style.display = 'none';
                 productPreview.style.display = 'none';
+                orderListContainer.style.display = 'none';
                 this.closeModal('exchange');
             });
         }
