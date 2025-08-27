@@ -110,9 +110,38 @@ This patch implements surgical, in-place edits to the vanilla-JS storefront whil
 - **Responsive Design:** Mobile-optimized layout with horizontal thumbnails
 - **Seamless Integration:** Preview appears immediately when new item is selected
 
+### Webhook Payload Standardization ✅
+**Files:** `index.html`, `main.js`
+**Changes:**
+- **Return Form Redesign:** Complete overhaul from phone-lookup system to full customer details form
+  - Added all customer fields: name, email, phone, address, city, postal code
+  - Added return reason textarea
+  - Added optional order ID field
+  - Status set to "Return"
+  - Payload structure matches regular orders with return-specific note
+
+- **Exchange Form Enhancement:** Added full customer details while keeping product selection
+  - Added all customer fields: name, email, phone, address, city, postal code
+  - Kept product selection dropdowns and price delta calculation
+  - Kept detailed exchange note format
+  - Status set to "Exchange"
+  - Added exchangeDetails object with old/new product info
+  - Payload structure matches regular orders with exchange-specific note and details
+
+- **Validation Enhancements:**
+  - Added email format validation for both forms
+  - Comprehensive required field validation
+  - User-friendly error messages with field focus
+
+- **Webhook Payload Standardization:**
+  - Both return and exchange now send full customer order data
+  - Consistent payload structure across all request types
+  - Proper status values ("Return", "Exchange")
+  - Detailed notes preserved for exchange requests
+
 ## Files Modified
-- `index.html` - Modal structures, navigation attributes, form enhancements, product preview HTML
-- `main.js` - Core functionality, validation, event handlers, webhook logic, toast simplification, product preview logic
+- `index.html` - Modal structures, navigation attributes, form enhancements, product preview HTML, return/exchange form redesign
+- `main.js` - Core functionality, validation, event handlers, webhook logic, toast simplification, product preview logic, return/exchange payload standardization
 - `styles.css` - Accessibility enhancements, mobile navigation, form styling, product preview styling
 
 ## Bundle Size Impact

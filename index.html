@@ -435,17 +435,59 @@
                 </button>
             </div>
             <div class="modal-body">
-                <!-- The return form now begins with a phone number lookup.  Customers enter
-                     their phone number, then click "Find Orders" to populate the order
-                     selector with any orders associated with that number.  Once an
-                     order is selected the submit button becomes enabled. -->
-                <form id="returnForm" class="return-exchange-form">
-                    <input type="tel" id="returnPhone" placeholder="Your phone number" required>
-                    <button type="button" id="findReturnOrders" class="btn btn-secondary">Find Orders</button>
-                    <!-- Container that will list orders associated with the entered phone number.  Hidden until populated. -->
-                    <div id="returnOrderList" class="order-list" style="display: none;"></div>
-                    <textarea id="returnMessage" name="returnReason" placeholder="Reason for return (required)" rows="3" maxlength="500" required aria-label="Reason for return"></textarea>
-                    <button type="submit" id="returnSubmit" class="btn btn-primary" disabled>Submit Return Request</button>
+                <form id="returnForm" class="checkout-form">
+                    <div class="form-section">
+                        <h4>Return Request Details</h4>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" name="phone" class="form-input" placeholder="Your phone number" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" name="email" class="form-input" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" name="firstName" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" name="lastName" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Shipping Address *</label>
+                            <input type="text" name="address" class="form-input" placeholder="Street address" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">City *</label>
+                                <input type="text" name="city" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Postal Code *</label>
+                                <input type="text" name="postalCode" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Reason for Return *</label>
+                            <textarea name="returnReason" class="form-input" rows="3" maxlength="500" placeholder="Please provide detailed reason for return" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Order ID (if known)</label>
+                            <input type="text" name="orderId" class="form-input" placeholder="Optional - leave blank if unknown">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit Return Request</button>
                 </form>
             </div>
         </div>
@@ -462,9 +504,46 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="exchangeForm" class="exchange-form">
+                <form id="exchangeForm" class="checkout-form">
                     <div class="form-section">
-                        <h4>Exchange Request</h4>
+                        <h4>Exchange Request Details</h4>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" name="phone" class="form-input" placeholder="Your phone number" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" name="email" class="form-input" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" name="firstName" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" name="lastName" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Shipping Address *</label>
+                            <input type="text" name="address" class="form-input" placeholder="Street address" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">City *</label>
+                                <input type="text" name="city" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Postal Code *</label>
+                                <input type="text" name="postalCode" class="form-input" required>
+                            </div>
+                        </div>
 
                         <div class="form-group">
                             <label class="form-label">Select Item to Exchange</label>
@@ -500,8 +579,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Comment (optional)</label>
-                            <textarea id="exchangeComment" name="exchangeComment" class="form-input" rows="3" maxlength="500" placeholder="Add any additional comments about your exchange request"></textarea>
+                            <label class="form-label">Exchange Note</label>
+                            <textarea name="note" class="form-input" rows="3" maxlength="500" placeholder="Add any additional comments about your exchange request"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Order ID (if known)</label>
+                            <input type="text" name="orderId" class="form-input" placeholder="Optional - leave blank if unknown">
                         </div>
                     </div>
 

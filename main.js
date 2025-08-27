@@ -2341,55 +2341,65 @@ class GrindCTRLApp {
             });
         };
 
-        // Attach handlers for Return
-        attachLookupHandlers('returnPhone', 'findReturnOrders', 'returnOrderList', 'returnSubmit');
-        // Exchange form uses new item selection logic (no phone lookup)
+        // Return and Exchange forms now use full customer details (no phone lookup)
 
         // Submit handlers for return and exchange forms
         const returnForm = document.getElementById('returnForm');
         if (returnForm) {
             returnForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const phoneVal = document.getElementById('returnPhone')?.value.trim();
-                const reasonVal = document.getElementById('returnMessage')?.value.trim();
-                // Find the selected order from the radio list
-                const selectedRadio = document.querySelector('#returnOrderList input[type="radio"]:checked');
-                if (!phoneVal) {
-                    this.notifications.error('Please enter a phone number.');
+
+                const formData = new FormData(returnForm);
+                const returnData = {};
+
+                // Collect form data
+                for (let [key, value] of formData.entries()) {
+                    returnData[key] = value;
+                }
+
+                // Validate required fields
+                if (!returnData.phone || !returnData.email || !returnData.firstName ||
+                    !returnData.lastName || !returnData.address || !returnData.city ||
+                    !returnData.returnReason) {
+                    this.notifications.error('Please fill in all required fields.');
                     return;
                 }
-                if (!selectedRadio) {
-                    this.notifications.error('Please select an order to return.');
+
+                // Validate email format
+                if (!Utils.validateEmail(returnData.email)) {
+                    this.notifications.error('Please enter a valid email address.');
                     return;
                 }
-                if (!reasonVal) {
-                    this.notifications.error('Please provide a reason for the return.');
-                    document.getElementById('returnMessage')?.focus();
-                    return;
-                }
-                const orderId = selectedRadio.value;
-                // Look up the full order details by phone and id
-                const orders = getOrdersByPhone(phoneVal);
-                const orderObj = orders.find(o => o['Order ID'] === orderId) || null;
-                const payload = {
-                    phone: phoneVal,
-                    orderId: orderId,
-                    requestType: "return",
-                    note: `Reason: ${reasonVal}`,
-                    order: orderObj
+
+                // Create return payload similar to order data
+                const returnPayload = {
+                    "Order ID": returnData.orderId || Utils.generateOrderId(),
+                    "Customer Name": `${returnData.firstName} ${returnData.lastName}`,
+                    "Customer Email": returnData.email,
+                    "Phone": returnData.phone,
+                    "City": returnData.city,
+                    "Address": returnData.address,
+                    "Note": `Return Reason: ${returnData.returnReason}`,
+                    "COD Amount": "0.00",
+                    "Tracking Number": "",
+                    "Courier": "",
+                    "Total": "0.00",
+                    "Date": new Date().toISOString(),
+                    "Status": "Return",
+                    "Payment Method": "Return Request",
+                    "Product": "Return Request",
+                    "Quantity": "1",
+                    "requestType": "return"
                 };
-                const success = await this.sendReturnOrExchangeWebhook(payload, 'return');
+
+                const success = await this.sendReturnOrExchangeWebhook(returnPayload, 'return');
                 if (success) {
                     this.notifications.success('Return request submitted! Our support team will contact you soon.');
                 } else {
                     this.notifications.error('Failed to submit return request. Please try again.');
                 }
+
                 returnForm.reset();
-                // Hide order list and disable submit again
-                const listEl = document.getElementById('returnOrderList');
-                const submitBtn = document.getElementById('returnSubmit');
-                if (listEl) listEl.style.display = 'none';
-                if (submitBtn) submitBtn.disabled = true;
                 this.closeModal('return');
             });
         }
@@ -2453,9 +2463,29 @@ class GrindCTRLApp {
             exchangeForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
+                const formData = new FormData(exchangeForm);
+                const exchangeData = {};
+
+                // Collect form data
+                for (let [key, value] of formData.entries()) {
+                    exchangeData[key] = value;
+                }
+
+                // Validate required fields
+                if (!exchangeData.phone || !exchangeData.email || !exchangeData.firstName ||
+                    !exchangeData.lastName || !exchangeData.address || !exchangeData.city) {
+                    this.notifications.error('Please fill in all required fields.');
+                    return;
+                }
+
+                // Validate email format
+                if (!Utils.validateEmail(exchangeData.email)) {
+                    this.notifications.error('Please enter a valid email address.');
+                    return;
+                }
+
                 const oldItemId = document.getElementById('exchangeOldItem')?.value;
                 const newItemId = document.getElementById('exchangeNewItem')?.value;
-                const comment = document.getElementById('exchangeComment')?.value.trim() || '';
 
                 if (!oldItemId) {
                     this.notifications.error('Please select an item to exchange.');
@@ -2479,14 +2509,43 @@ class GrindCTRLApp {
                 const delta = newPrice - oldPrice;
                 const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
 
-                // Create note-only payload as specified
-                const note = `Exchange | Old: [${oldProduct.sku || 'n/a'} – ${oldProduct.name} – ${oldPrice.toFixed(2)} EGP] | New: [${newProduct.sku || 'n/a'} – ${newProduct.name} – ${newPrice.toFixed(2)} EGP] | Delta: ${deltaText} EGP | Comment: ${comment}`;
-
-                const payload = {
-                    note: note
+                // Create exchange payload similar to order data with detailed note
+                const exchangePayload = {
+                    "Order ID": exchangeData.orderId || Utils.generateOrderId(),
+                    "Customer Name": `${exchangeData.firstName} ${exchangeData.lastName}`,
+                    "Customer Email": exchangeData.email,
+                    "Phone": exchangeData.phone,
+                    "City": exchangeData.city,
+                    "Address": exchangeData.address,
+                    "Note": `Exchange | Old: [${oldProduct.sku || 'n/a'} – ${oldProduct.name} – ${oldPrice.toFixed(2)} EGP] | New: [${newProduct.sku || 'n/a'} – ${newProduct.name} – ${newPrice.toFixed(2)} EGP] | Delta: ${deltaText} EGP | Comment: ${exchangeData.note || ''}`,
+                    "COD Amount": delta >= 0 ? delta.toFixed(2) : "0.00",
+                    "Tracking Number": "",
+                    "Courier": "",
+                    "Total": newPrice.toFixed(2),
+                    "Date": new Date().toISOString(),
+                    "Status": "Exchange",
+                    "Payment Method": delta >= 0 ? "Exchange Payment Required" : "Exchange Refund",
+                    "Product": `${newProduct.name}${newProduct.sku ? ` (${newProduct.sku})` : ''} (Exchange)`,
+                    "Quantity": "1",
+                    "requestType": "exchange",
+                    "exchangeDetails": {
+                        "oldProduct": {
+                            "id": oldProduct.id,
+                            "name": oldProduct.name,
+                            "sku": oldProduct.sku || 'n/a',
+                            "price": oldPrice
+                        },
+                        "newProduct": {
+                            "id": newProduct.id,
+                            "name": newProduct.name,
+                            "sku": newProduct.sku || 'n/a',
+                            "price": newPrice
+                        },
+                        "priceDifference": delta
+                    }
                 };
 
-                const success = await this.sendReturnOrExchangeWebhook(payload, 'exchange');
+                const success = await this.sendReturnOrExchangeWebhook(exchangePayload, 'exchange');
                 if (success) {
                     this.notifications.success('Exchange request submitted! Our support team will contact you soon.');
                 } else {
@@ -2495,6 +2554,7 @@ class GrindCTRLApp {
 
                 exchangeForm.reset();
                 priceDeltaDiv.style.display = 'none';
+                productPreview.style.display = 'none';
                 this.closeModal('exchange');
             });
         }
