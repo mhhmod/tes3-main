@@ -2080,24 +2080,32 @@ class GrindCTRLApp {
     }
 
     populateExchangeDropdowns() {
-        const oldItemSelect = document.getElementById('exchangeOldItem');
+        
         const newItemSelect = document.getElementById('exchangeNewItem');
+        if (!newItemSelect) return;
 
-        if (!oldItemSelect || !newItemSelect || !this.state.products.length) return;
+        const fill = (list) => {
+            newItemSelect.innerHTML = '<option value="">Choose new item...</option>';
+            if (!Array.isArray(list) || !list.length) return;
+            list.forEach(p => {
+                const label = `${p.name}${p.sku ? ` (${p.sku})` : ''} - ${p.price ? p.price.toFixed(2) : 'n/a'} EGP`;
+                newItemSelect.appendChild(new Option(label, p.id));
+            });
+        };
 
-        // Clear existing options except the first one
-        oldItemSelect.innerHTML = '<option value="">Choose item to exchange...</option>';
-        newItemSelect.innerHTML = '<option value="">Choose new item...</option>';
-
-        // Populate both dropdowns with product data
-        this.state.products.forEach(product => {
-            const optionText = `${product.name}${product.sku ? ` (${product.sku})` : ''} - ${product.price ? product.price.toFixed(2) : 'n/a'} EGP`;
-
-            const oldOption = new Option(optionText, product.id);
-            const newOption = new Option(optionText, product.id);
-
-            oldItemSelect.appendChild(oldOption);
-            newItemSelect.appendChild(newOption);
+        if (this.state && Array.isArray(this.state.products) && this.state.products.length) {
+            fill(this.state.products);
+        } else {
+            fetch('./products.json')
+              .then(r => r.ok ? r.json() : Promise.reject(new Error('products.json failed')))
+              .then(data => {
+                  const list = Array.isArray(data?.products) ? data.products : [];
+                  if (this.state) this.state.products = list;
+                  fill(list);
+              })
+              .catch(() => {/* noop */});
+        }
+    
         });
     }
 
@@ -2369,21 +2377,31 @@ class GrindCTRLApp {
                 container.appendChild(item);
             });
 
-            container.style.display = 'block';
-            if (submitBtn) submitBtn.disabled = true;
+            \1
+            if (submitBtn) { submitBtn.style.display = 'inline-block'; }
 
             // Enable submit when an order is chosen
-            container.addEventListener('change', (e) => {
-                if (e.target && e.target.matches('input[type="radio"]')) {
-                    if (submitBtn) submitBtn.disabled = false;
-                    // Remove selected class from all items
-                    container.querySelectorAll('.order-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
+            \1
+                container.querySelectorAll('.order-item').forEach(i => i.classList.remove('selected'));
+                const card = e.target.closest('.order-item');
+                if (card) card.classList.add('selected');
+            }
+        });
                     // Add selected class to the selected item
                     e.target.closest('.order-item').classList.add('selected');
                 }
             });
+            /*__ORDER_CARD_CLICK__*/
+            container.addEventListener('click', (evt) => {
+                const card = evt.target.closest('.order-item');
+                if (!card || !container.contains(card)) return;
+                const r = card.querySelector('input[type="radio"]');
+                if (r) {
+                    r.checked = true;
+                    r.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        
         };
 
         /**
@@ -2622,7 +2640,8 @@ class GrindCTRLApp {
 
             // Step 3: Show Item Selection
             const showItemSelection = (order) => {
-                selectedOrder = order;
+                                this.populateExchangeDropdowns();
+selectedOrder = order;
                 itemSelectionSection.style.display = 'block';
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
@@ -2910,12 +2929,14 @@ window.closeSuccessModal = function() {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new GrindCTRLApp();
+    try { window.addEventListener('load', () => app.loading.hideAll()); } catch(_){}
+    try { setTimeout(() => app.loading.hideAll(), 7000); } catch(_){}
 });
 
 // ===== SERVICE WORKER REGISTRATION =====
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        /* SW disabled to prevent cache issues */ (async ()=>{ try { return await navigator.serviceWorker.register('/sw.js'); } catch(e){ console.warn('SW reg failed', e);} })()
             .then(registration => {
                 console.log('SW registered: ', registration);
             })

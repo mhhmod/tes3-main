@@ -48,21 +48,14 @@
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-animation">
             <div class="spinner"></div>
-<!-- Failsafe: hide stuck loader -->
 <script>
 /*__OVERLAY_KILLER__*/
 (function(){
-  function kill(){ try { var el = document.getElementById('loadingScreen'); if(el){ el.classList.add('hidden'); } } catch(e){} }
-  window.addEventListener('load', kill, { once: true });
-  window.addEventListener('error', kill);
-  window.addEventListener('unhandledrejection', kill);
-  setTimeout(kill, 8000);
-  // Optional: unregister any service worker caching old JS
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      regs.forEach(function(r){ try{ r.unregister(); }catch(e){} });
-    });
-  }
+  function hide(){ try{ var el=document.getElementById('loadingScreen'); if(el){ el.classList.add('hidden'); } }catch(e){} }
+  window.addEventListener('load', hide, { once:true });
+  window.addEventListener('error', hide);
+  window.addEventListener('unhandledrejection', hide);
+  setTimeout(hide, 8000);
 })();
 </script>
 
@@ -642,6 +635,6 @@
         Without cache busting, some clients might continue to serve stale JavaScript even after an
         update. Bump this version string whenever the contents of main.js change.
     -->
-    <script src="main.js?v=2025-08-24d&v=v10_1756338298" defer"></script>
+    <script src="main.js?v=2025-08-24d&v=v11_1756338776" defer"></script>
 </body>
 </html>
