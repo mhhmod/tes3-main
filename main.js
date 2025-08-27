@@ -526,7 +526,6 @@ class ScrollAnimations {
 // ===== MAIN APPLICATION CLASS =====
 class GrindCTRLApp {
     constructor() {
-        console.log('GrindCTRLApp constructor called');
         this.state = new AppState();
         this.notifications = new NotificationManager();
         this.loading = new LoadingManager();
@@ -544,39 +543,44 @@ class GrindCTRLApp {
          */
         try {
             this.loading.show('init');
+
+            // Load product data.  If this fails, loadProducts() will fall
+            // back to embedded data.  Any error thrown beyond that will be
+            // caught below.
             await this.loadProducts();
+
+            // Initialize UI components
             this.initializeEventListeners();
             this.initializeNavigation();
             this.initializeModals();
             this.initializeBackToTop();
             this.initializeNewsletterForm();
             this.initializeContactForm();
+
+            // Initialize return/exchange form handlers so customers can request
+            // returns or exchanges from the footer at any time.
             this.initializeReturnExchangeForms();
+
+            // Render initial content
             this.renderCategories();
             this.renderProducts();
             this.state.updateCartUI();
             this.state.updateWishlistUI();
+
+            // Initialize scroll animations
             setTimeout(() => {
                 this.scrollAnimations = new ScrollAnimations();
             }, 100);
+
             console.log('GrindCTRL App initialized successfully');
+
         } catch (error) {
             console.error('Failed to initialize app:', error);
-            // Use direct DOM manipulation to avoid circular dependencies
-            if (document.getElementById('loadingScreen')) {
-                document.getElementById('loadingScreen').innerHTML = `
-                    <div class='loading-error'>
-                        <i class='fas fa-exclamation-circle'></i>
-                        <h2>Application Load Error</h2>
-                        <p><strong>Error:</strong> ${error.message || error}</p>
-                        <p><strong>Type:</strong> ${error.name || 'Unknown'}</p>
-                        <p><strong>Stack:</strong> ${error.stack ? error.stack.split('\n')[0] : 'Not available'}</p>
-                        <button onclick='window.location.reload()'>Reload Page</button>
-                    </div>
-                `;
-            }
+            this.notifications.error('Failed to load the application. Please refresh the page.');
+            // In case of a critical failure, hide all loading tasks
             this.loading.hideAll();
         } finally {
+            // Always hide the loading screen after initialization attempt
             this.loading.hide('init');
         }
     }
@@ -584,23 +588,16 @@ class GrindCTRLApp {
     async loadProducts() {
         try {
             const response = await fetch('./products.json');
-            if (!response.ok) throw new Error('Failed to fetch products.json');
+            if (!response.ok) throw new Error('Failed to fetch products');
+            
             const data = await response.json();
-            // Defensive checks
-            if (!data.products || !Array.isArray(data.products)) {
-                throw new Error('products.json is missing a valid "products" array');
-            }
-            if (!data.categories || !Array.isArray(data.categories)) {
-                throw new Error('products.json is missing a valid "categories" array');
-            }
             this.state.products = data.products;
             this.state.categories = data.categories;
+            
         } catch (error) {
             console.error('Error loading products:', error);
             // Fallback to embedded data
             this.loadFallbackData();
-            // Log error but don't try to show notifications yet
-            console.warn('Using fallback product data due to:', error.message || error);
         }
     }
 
@@ -630,6 +627,7 @@ class GrindCTRLApp {
                 tags: ["HOT", "BESTSELLER"]
             }
         ];
+        
         this.state.categories = [
             { id: "all", name: "All Products", filter: null },
             { id: "tshirts", name: "T-Shirts", filter: "tshirts" }
@@ -1979,35 +1977,28 @@ class GrindCTRLApp {
         const cart = document.getElementById('floatingCart');
         const cartToggle = document.getElementById('cartToggle');
         
-        if (!cart || !cartToggle) {
-            console.error('Cart elements not found');
-            return;
-        }
+        if (!cart || !cartToggle) return;
 
-        // Force render cart items
-        try {
-            this.state.renderCartItems();
-        } catch (error) {
-            console.error('Failed to render cart items', error);
-        }
+        // Render cart items before opening
+        this.state.renderCartItems();
 
-        // Explicit open/close logic
-        const isCurrentlyOpen = cart.classList.contains('open');
-        const shouldOpen = force !== null ? force : !isCurrentlyOpen;
-
-        if (shouldOpen) {
-            cart.classList.add('open');
-            this.toggleWishlist(false);
-            document.body.style.overflow = 'hidden';
+        if (force !== null) {
+            cart.classList.toggle('open', force);
         } else {
-            cart.classList.remove('open');
-            document.body.style.overflow = '';
+            cart.classList.toggle('open');
         }
 
-        // Guaranteed cart count update
+        if (cart.classList.contains('open')) {
+            this.toggleWishlist(false); // Close wishlist if open
+            document.body.style.overflow = 'hidden'; // Prevent body scroll
+        } else {
+            document.body.style.overflow = ''; // Restore body scroll
+        }
+
+        // Update cart count
         const cartCount = document.getElementById('cartCount');
         if (cartCount) {
-            cartCount.textContent = this.state.cart.length || '0';
+            cartCount.textContent = this.state.cart.length;
         }
     }
 
@@ -2291,24 +2282,6 @@ class GrindCTRLApp {
      * Open the exchange order modal.
      */
     openExchangeModal() {
-        const exchangeModal = document.getElementById('exchangeModal');
-        const exchangeForm = document.getElementById('exchangeForm');
-        const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
-        const step1Section = exchangeForm.querySelector('.form-section');
-        const itemSelectionSection = document.getElementById('itemSelectionSection');
-
-        if (!exchangeModal || !exchangeForm || !exchangeSubmitBtn || !step1Section || !itemSelectionSection) {
-            console.error('Exchange modal elements not found');
-            return;
-        }
-
-        // Reset form and sections
-        exchangeForm.reset();
-        step1Section.style.display = 'block';
-        itemSelectionSection.style.display = 'none';
-        exchangeSubmitBtn.style.display = 'none';
-
-        // Open modal
         this.openModal('exchange');
     }
 
@@ -2993,4 +2966,3 @@ document.addEventListener('keydown', function(e){
     try { window.app && app.closeAllModals && app.closeAllModals(); } catch(_){}
   }
 });
-
