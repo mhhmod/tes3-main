@@ -274,6 +274,26 @@ This patch implements surgical, in-place edits to the vanilla-JS storefront whil
 - **Accessibility**: Proper labels, keyboard navigation, screen reader support
 - **Responsive Design**: Seamless experience across all device sizes
 
+### Visual Enhancements 🎨
+**Files:** `styles.css`
+**Enhancement:** Order selection UI improvements with website color scheme
+
+- **Website Color Integration:**
+  - **Selected Order Gradient:** Updated to use `linear-gradient(135deg, var(--primary-color), var(--accent-color))` matching the website's red theme
+  - **Hover Effects:** Added subtle gradient background on hover with primary color tint
+  - **Enhanced Shadows:** Added professional shadow effects with website's primary color
+
+- **Typography & Spacing Improvements:**
+  - **Better Margins:** Increased spacing between order header and info sections
+  - **Line Height:** Improved readability with proper line spacing (1.4)
+  - **Block Spacing:** Each info item now has proper vertical spacing
+  - **Font Weights:** Enhanced price display with better font weight and size
+
+- **Interactive Feedback:**
+  - **Smooth Transitions:** All color changes have smooth animations
+  - **Visual Hierarchy:** Clear distinction between selected and unselected states
+  - **Color Consistency:** All colors now match the website's flagship dark theme
+
 ### Critical Bug Fixes ✅
 **Files:** `main.js`, `styles.css`, `index.html`
 **Issue:** Exchange order selection not working + checkout scrolling problems

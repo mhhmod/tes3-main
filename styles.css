@@ -3286,16 +3286,17 @@ textarea:focus {
 }
 
 .order-item:hover {
-    background: var(--background-card);
+    background: linear-gradient(135deg, var(--background-card), rgba(231, 76, 60, 0.05));
     border-color: var(--primary-color);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
 }
 
 .order-item.selected {
-    background: linear-gradient(135deg, var(--primary-color), rgba(59, 130, 246, 0.8));
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
     color: white;
     border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
 .order-item input[type="radio"] {
@@ -3305,23 +3306,34 @@ textarea:focus {
 .order-item .order-info {
     font-size: 0.9rem;
     color: var(--text-secondary);
-    margin-top: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    line-height: 1.4;
+}
+
+.order-item .order-info small {
+    display: block;
+    margin-bottom: var(--spacing-xs);
 }
 
 .order-item.selected .order-info {
     color: rgba(255, 255, 255, 0.9);
 }
 
+.order-item.selected .order-info small {
+    color: rgba(255, 255, 255, 0.8);
+}
+
 .order-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
 }
 
 .order-price {
     font-weight: 600;
     color: var(--primary-color);
+    font-size: 1rem;
 }
 
 /* Responsive improvements for new exchange flow */
