@@ -1975,12 +1975,7 @@ class GrindCTRLApp {
     // ===== CART AND WISHLIST TOGGLES =====
     toggleCart(force = null) {
         const cart = document.getElementById('floatingCart');
-        const cartToggle = document.getElementById('cartToggle');
-        
-        if (!cart || !cartToggle) return;
-
-        // Render cart items before opening
-        this.state.renderCartItems();
+        if (!cart) return;
 
         if (force !== null) {
             cart.classList.toggle('open', force);
@@ -1990,15 +1985,6 @@ class GrindCTRLApp {
 
         if (cart.classList.contains('open')) {
             this.toggleWishlist(false); // Close wishlist if open
-            document.body.style.overflow = 'hidden'; // Prevent body scroll
-        } else {
-            document.body.style.overflow = ''; // Restore body scroll
-        }
-
-        // Update cart count
-        const cartCount = document.getElementById('cartCount');
-        if (cartCount) {
-            cartCount.textContent = this.state.cart.length;
         }
     }
 
