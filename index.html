@@ -560,50 +560,36 @@
                     <!-- Step 3: Item Selection -->
                     <div class="form-section" id="itemSelectionSection" style="display: none;">
                         <h4>Step 3: Choose New Item</h4>
-                        <div class="info-box">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Choose the new item you'd like to exchange to</span>
-                        </div>
-
+                        
                         <div class="form-group">
-                            <label class="form-label">Select New Item *</label>
+                            <label class="form-label">Select New Product *</label>
                             <select id="exchangeNewItem" class="form-input" required>
-                                <option value="">Choose new item...</option>
-                                <!-- Populated by JavaScript -->
+                                <!-- Populated dynamically -->
                             </select>
                         </div>
 
-                        <!-- Product Preview Section -->
-                        <div class="product-preview" id="exchangeProductPreview" style="display: none;">
-                            <h5>New Item Preview</h5>
-                            <div class="preview-images">
-                                <img id="exchangePreviewMainImage" src="" alt="" class="preview-main-image">
-                                <div class="preview-thumbnails" id="exchangePreviewThumbnails"></div>
-                            </div>
-                            <div class="preview-details" id="exchangePreviewDetails"></div>
+                        <div id="exchangeProductPreview" class="product-preview">
+                            <!-- Product preview will be populated here -->
                         </div>
 
-                        <!-- Exchange Summary -->
-                        <div class="exchange-summary" id="exchangeSummary" style="display: none;">
-                            <h5>Exchange Summary</h5>
-                            <div class="summary-content" id="summaryContent"></div>
-                        </div>
-
-                        <div class="price-delta" id="priceDelta" style="display: none;">
-                            <div class="delta-display">
-                                <span class="delta-label">Price Difference:</span>
-                                <span class="delta-amount" id="deltaAmount">EGP 0.00</span>
-                            </div>
-                            <div class="delta-explanation" id="deltaExplanation"></div>
+                        <div id="exchangeSummary" class="exchange-summary">
+                            <!-- Exchange summary details -->
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Exchange Note</label>
-                            <textarea name="note" class="form-input" rows="3" maxlength="500" placeholder="Add any additional comments about your exchange request"></textarea>
+                            <label class="form-label">Additional Notes (Optional)</label>
+                            <textarea name="note" class="form-input" rows="3" placeholder="Any additional details about your exchange"></textarea>
                         </div>
-                    </div>
 
-                    <button type="submit" id="exchangeSubmit" class="btn btn-primary" style="display: none;">Submit Exchange Request</button>
+                        <button 
+                            type="submit" 
+                            id="exchangeSubmit" 
+                            class="btn btn-primary btn-large" 
+                            style="display: none;"
+                        >
+                            Submit Exchange Request
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
