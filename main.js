@@ -364,19 +364,10 @@ class NotificationManager {
         this.watchdogTimeout = null;
     }
 
-    show(message, type = 'info', duration = 4000) {
+    show(message, type = 'info', duration = 3500) {
         if (!this.container) return;
-        // Use 3500ms default if not specified
-        duration = typeof duration === 'number' ? duration : 3500;
-        if (!duration || duration > 8000) duration = 3500;
-        const notification = {
-            id: Date.now(),
-            message,
-            type,
-            duration
-        };
-        this.notifications.push(notification);
-        this.render(notification);
+
+        // Clear any existing toast immediately
         if (this.currentTimeout) {
             clearTimeout(this.currentTimeout);
             this.currentTimeout = null;
@@ -385,44 +376,29 @@ class NotificationManager {
             clearTimeout(this.watchdogTimeout);
             this.watchdogTimeout = null;
         }
-        // Track remaining time for pause/resume
-        let remaining = duration;
-        let start = Date.now();
-        const hideToast = () => {
+
+        // Force hide current toast if visible
+        this.container.classList.remove('show');
+
+        const notification = {
+            id: Date.now(),
+            message,
+            type,
+            duration
+        };
+
+        this.notifications.push(notification);
+        this.render(notification);
+
+        // Simple timeout - no pause/resume complexity
+        this.currentTimeout = setTimeout(() => {
             this.hide(notification.id);
-            this.currentTimeout = null;
-            if (this.watchdogTimeout) {
-                clearTimeout(this.watchdogTimeout);
-                this.watchdogTimeout = null;
-            }
-        };
-        const scheduleHide = () => {
-            this.currentTimeout = setTimeout(hideToast, remaining);
-        };
-        scheduleHide();
+        }, duration);
+
         // Watchdog: force close at 8s from show()
-        this.watchdogTimeout = setTimeout(hideToast, 8000);
-        // Pause on hover/focus, resume on leave/blur
-        const pause = () => {
-            if (this.currentTimeout) {
-                clearTimeout(this.currentTimeout);
-                this.currentTimeout = null;
-                remaining -= Date.now() - start;
-                if (remaining < 0) remaining = 0;
-            }
-        };
-        const resume = () => {
-            if (!this.currentTimeout && remaining > 0) {
-                start = Date.now();
-                scheduleHide();
-            }
-        };
-        this.container.onmouseenter = pause;
-        this.container.onfocus = pause;
-        this.container.onmouseleave = resume;
-        this.container.onblur = resume;
-        // Ensure z-index above mobile menu
-        this.container.style.zIndex = 'var(--z-toast, 1200)';
+        this.watchdogTimeout = setTimeout(() => {
+            this.hide(notification.id);
+        }, 8000);
     }
 
     render(notification) {
@@ -2098,6 +2074,81 @@ class GrindCTRLApp {
         });
     }
 
+    renderExchangeProductPreview(product) {
+        const mainImage = document.getElementById('exchangePreviewMainImage');
+        const thumbnailsContainer = document.getElementById('exchangePreviewThumbnails');
+        const detailsContainer = document.getElementById('exchangePreviewDetails');
+
+        if (!mainImage || !thumbnailsContainer || !detailsContainer) return;
+
+        // Set main image
+        mainImage.src = product.images[0] || '';
+        mainImage.alt = product.name;
+
+        // Create thumbnails
+        if (product.images && product.images.length > 1) {
+            thumbnailsContainer.innerHTML = product.images.map((image, index) => `
+                <img src="${image}"
+                     alt="${product.name} view ${index + 1}"
+                     class="${index === 0 ? 'active' : ''}"
+                     onclick="app.changeExchangePreviewImage('${image}', this)">
+            `).join('');
+        } else {
+            thumbnailsContainer.innerHTML = '';
+        }
+
+        // Add product details
+        const discount = product.originalPrice ?
+            Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
+
+        detailsContainer.innerHTML = `
+            <p><strong>${product.name}</strong></p>
+            <p>
+                <span style="font-weight: 600; color: var(--primary-color); font-size: 1.1em;">
+                    ${product.price ? product.price.toFixed(2) : 'n/a'} EGP
+                </span>
+                ${product.originalPrice ? `
+                    <span style="text-decoration: line-through; color: var(--text-secondary); margin-left: 8px;">
+                        ${product.originalPrice.toFixed(2)} EGP
+                    </span>
+                    <span style="color: #22c55e; font-weight: 600; margin-left: 8px;">
+                        ${discount}% OFF
+                    </span>
+                ` : ''}
+            </p>
+            ${product.rating ? `
+                <p>
+                    <div style="color: #fbbf24; display: inline-block;">
+                        ${this.generateStars(product.rating)}
+                    </div>
+                    <span style="margin-left: 8px; color: var(--text-secondary);">
+                        ${product.rating}/5 (${product.reviewCount || 0} reviews)
+                    </span>
+                </p>
+            ` : ''}
+            ${product.description ? `
+                <p style="margin-top: 8px; line-height: 1.4;">
+                    ${product.description.length > 150 ?
+                        product.description.substring(0, 150) + '...' :
+                        product.description}
+                </p>
+            ` : ''}
+        `;
+    }
+
+    changeExchangePreviewImage(imageSrc, thumbnailElement) {
+        const mainImage = document.getElementById('exchangePreviewMainImage');
+        const thumbnails = document.querySelectorAll('#exchangePreviewThumbnails img');
+
+        if (mainImage) {
+            mainImage.src = imageSrc;
+        }
+
+        // Update active thumbnail
+        thumbnails.forEach(thumb => thumb.classList.remove('active'));
+        thumbnailElement.classList.add('active');
+    }
+
     // ===== NAVIGATION AND SCROLLING =====
     scrollToSection(sectionId) {
         const section = document.getElementById(sectionId);
@@ -2347,11 +2398,12 @@ class GrindCTRLApp {
             // Populate product dropdowns
             this.populateExchangeDropdowns();
 
-            // Handle dropdown changes for price delta calculation
+            // Handle dropdown changes for price delta calculation and product preview
             const oldItemSelect = document.getElementById('exchangeOldItem');
             const newItemSelect = document.getElementById('exchangeNewItem');
             const priceDeltaDiv = document.getElementById('priceDelta');
             const deltaAmountSpan = document.getElementById('deltaAmount');
+            const productPreview = document.getElementById('exchangeProductPreview');
 
             const updatePriceDelta = () => {
                 const oldItemId = oldItemSelect?.value;
@@ -2377,8 +2429,25 @@ class GrindCTRLApp {
                 }
             };
 
+            const updateProductPreview = () => {
+                const newItemId = newItemSelect?.value;
+
+                if (newItemId) {
+                    const product = this.state.products.find(p => p.id === newItemId);
+                    if (product) {
+                        this.renderExchangeProductPreview(product);
+                        productPreview.style.display = 'block';
+                    }
+                } else {
+                    productPreview.style.display = 'none';
+                }
+            };
+
             oldItemSelect?.addEventListener('change', updatePriceDelta);
-            newItemSelect?.addEventListener('change', updatePriceDelta);
+            newItemSelect?.addEventListener('change', () => {
+                updatePriceDelta();
+                updateProductPreview();
+            });
 
             // Handle form submission
             exchangeForm.addEventListener('submit', async (e) => {

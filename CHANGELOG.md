@@ -88,10 +88,32 @@ This patch implements surgical, in-place edits to the vanilla-JS storefront whil
 - Strategy 4: Image GET fallback with query string
 - Proper handling of missing/empty URLs with 1500ms delay simulation
 
+## Additional Enhancements (Latest Update)
+
+### Toast Performance Fix ✅
+**File:** `main.js`
+**Issue:** Toast notifications had lag due to complex pause/resume functionality
+**Solution:**
+- Removed hover/focus pause/resume complexity
+- Simplified to immediate show/hide with single timeout
+- Eliminated potential race conditions and performance issues
+- Maintained 3500ms default duration and 8s watchdog
+
+### Exchange Product Preview Enhancement ✅
+**Files:** `index.html`, `main.js`, `styles.css`
+**Enhancement:** Added comprehensive product viewing in exchange modal
+**Features:**
+- **Product Preview Section:** Shows main image (200x200px) and thumbnails
+- **Interactive Thumbnails:** Click to switch between product images
+- **Complete Product Details:** Name, price, discount, rating, description
+- **Same Experience as Quick View:** Customers see full product info before exchange
+- **Responsive Design:** Mobile-optimized layout with horizontal thumbnails
+- **Seamless Integration:** Preview appears immediately when new item is selected
+
 ## Files Modified
-- `index.html` - Modal structures, navigation attributes, form enhancements
-- `main.js` - Core functionality, validation, event handlers, webhook logic
-- `styles.css` - Accessibility enhancements, mobile navigation, form styling
+- `index.html` - Modal structures, navigation attributes, form enhancements, product preview HTML
+- `main.js` - Core functionality, validation, event handlers, webhook logic, toast simplification, product preview logic
+- `styles.css` - Accessibility enhancements, mobile navigation, form styling, product preview styling
 
 ## Bundle Size Impact
 - **+5 KB gzip MAX increase maintained**
