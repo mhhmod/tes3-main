@@ -1509,50 +1509,43 @@ class GrindCTRLApp {
     }
 
     renderOrderSummary() {
-        const subtotal = this.state.getCartTotal();
-        const shipping = 0;
-        const tax = 0;
-        const total = subtotal + shipping + tax;
+        const cart = this.state.cart;
+        if (!cart || cart.length === 0) {
+            return `
+                <div class="order-summary empty-cart">
+                    <p>Your cart is empty</p>
+                </div>
+            `;
+        }
+
+        const summaryItems = cart.map((item, index) => `
+            <div class="order-summary-item" data-index="${index}">
+                <div class="summary-item-details">
+                    <img src="${item.image}" alt="${item.name}" class="summary-item-image">
+                    <div class="summary-item-info">
+                        <h4>${item.name}</h4>
+                        <p class="summary-item-price">${item.price} EGP</p>
+                    </div>
+                </div>
+                <div class="summary-item-actions">
+                    <button class="btn-remove-item" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        const total = cart.reduce((sum, item) => sum + parseFloat(item.price), 0).toFixed(2);
 
         return `
             <div class="order-summary">
-                <h4>Order Summary</h4>
-                
-                <div class="summary-items">
-                    ${this.state.cart.map(item => `
-                        <div class="summary-item">
-                            <img src="${item.image}" alt="${item.name}" class="summary-item-image">
-                            <div class="summary-item-details">
-                                <div class="summary-item-name">${item.name}</div>
-                                <div class="summary-item-options">
-                                    ${item.size ? `Size: ${item.size}` : ''}
-                                    ${item.size && item.color ? ', ' : ''}
-                                    ${item.color ? `Color: ${item.color}` : ''}
-                                    <br>Qty: ${item.quantity}
-                                </div>
-                                <div class="summary-item-price">${Utils.formatPrice(item.price * item.quantity)}</div>
-                            </div>
-                        </div>
-                    `).join('')}
+                <h3>Order Summary</h3>
+                <div class="order-summary-list">
+                    ${summaryItems}
                 </div>
-                
-                <div class="summary-totals">
-                    <div class="summary-row">
-                        <span>Subtotal:</span>
-                        <span>${Utils.formatPrice(subtotal)}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Shipping:</span>
-                        <span>Free</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Tax:</span>
-                        <span>${Utils.formatPrice(tax)}</span>
-                    </div>
-                    <div class="summary-row summary-total">
-                        <span>Total:</span>
-                        <span>${Utils.formatPrice(total)}</span>
-                    </div>
+                <div class="order-summary-total">
+                    <strong>Total:</strong>
+                    <span class="total-amount">${total} EGP</span>
                 </div>
             </div>
         `;
