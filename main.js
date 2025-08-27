@@ -2375,7 +2375,7 @@ class GrindCTRLApp {
             // Enable submit when an order is chosen
             container.addEventListener('change', (e) => {
                 if (e.target && e.target.matches('input[type="radio"]')) {
-                    if (submitBtn) submitBtn.disabled = false;
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.display = 'inline-block'; }
                     // Remove selected class from all items
                     container.querySelectorAll('.order-item').forEach(item => {
                         item.classList.remove('selected');
@@ -2442,6 +2442,7 @@ class GrindCTRLApp {
                     const orders = getOrdersByPhoneOrEmail(phone, email);
                     if (orders.length > 0) {
                         populateOrderSelect(orderListContainer, orders, step2ContinueBtn);
+                    if (step2ContinueBtn) { step2ContinueBtn.style.display = 'inline-block'; step2ContinueBtn.disabled = true; }
                         orderListContainer.style.display = 'block';
 
                         // Pre-fill order ID if only one order found
@@ -2451,17 +2452,17 @@ class GrindCTRLApp {
                             const radio = orderListContainer.querySelector('input[type="radio"]');
                             if (radio) {
                                 radio.checked = true;
-                                step2ContinueBtn.disabled = false;
+                                if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = false;
                                 radio.closest('.order-item').classList.add('selected');
                             }
                         }
                     } else {
                         orderListContainer.style.display = 'none';
-                        step2ContinueBtn.disabled = true;
+                        if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = true;
                     }
                 } else {
                     orderListContainer.style.display = 'none';
-                    step2ContinueBtn.disabled = true;
+                    if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = true;
                 }
             };
 
@@ -2598,6 +2599,7 @@ class GrindCTRLApp {
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
                 if (orders.length > 0) {
                     populateOrderSelect(exchangeOrderList, orders, step2ContinueBtn);
+                    if (step2ContinueBtn) { step2ContinueBtn.style.display = 'inline-block'; step2ContinueBtn.disabled = true; }
                     orderSelectionSection.style.display = 'block';
                     currentStep = 2;
 
@@ -2609,7 +2611,7 @@ class GrindCTRLApp {
                         const firstRadio = exchangeOrderList.querySelector('input[type="radio"]');
                         if (firstRadio) {
                             firstRadio.checked = true;
-                            step2ContinueBtn.disabled = false;
+                            if (typeof step2ContinueBtn !== 'undefined' && step2ContinueBtn) step2ContinueBtn.disabled = false;
                             firstRadio.closest('.order-item').classList.add('selected');
                         }
                     }
