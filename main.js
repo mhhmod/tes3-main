@@ -2385,7 +2385,7 @@ class GrindCTRLApp {
                 }
             });
 
-            // Also support clicking anywhere on the card to select the radio
+            // Also allow clicking anywhere on the card to select the radio
             /*__ORDER_ITEM_CLICK_HANDLER__*/
             container.addEventListener('click', (e) => {
                 const card = e.target.closest('.order-item');
@@ -2393,7 +2393,6 @@ class GrindCTRLApp {
                 const r = card.querySelector('input[type="radio"]');
                 if (r) {
                     r.checked = true;
-                    // Fire change to enable Continue button and add .selected class
                     r.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
@@ -2427,7 +2426,7 @@ class GrindCTRLApp {
                 populateOrderSelect(container, orders, submitBtn);
             });
 
-            // Also support clicking anywhere on the card to select the radio
+            // Also allow clicking anywhere on the card to select the radio
             /*__ORDER_ITEM_CLICK_HANDLER__*/
             container.addEventListener('click', (e) => {
                 const card = e.target.closest('.order-item');
@@ -2435,7 +2434,6 @@ class GrindCTRLApp {
                 const r = card.querySelector('input[type="radio"]');
                 if (r) {
                     r.checked = true;
-                    // Fire change to enable Continue button and add .selected class
                     r.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
@@ -2936,6 +2934,9 @@ window.closeSuccessModal = function() {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new GrindCTRLApp();
+    // Safety: hide loading screen after window load or 6s, whichever comes first
+    window.addEventListener('load', () => { try { window.app.loading.hideAll(); } catch(e){} });
+    setTimeout(() => { try { window.app.loading.hideAll(); } catch(e){} }, 6000);
 });
 
 // ===== SERVICE WORKER REGISTRATION =====

@@ -3635,3 +3635,7 @@ textarea:focus {
     margin-top: var(--spacing-xs);
   }
 }
+
+/* UX: Make order cards clickable */
+.order-item { cursor: pointer; }
+.order-item label { cursor: pointer; display: block; width: 100%; }
