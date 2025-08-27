@@ -2959,3 +2959,71 @@ document.addEventListener('keydown', function(e){
     try { window.app && app.closeAllModals && app.closeAllModals(); } catch(_){}
   }
 });
+
+
+// --- Exchange Order Flow Fixes ---
+
+// Example: initialization of exchange handlers
+document.addEventListener('DOMContentLoaded', () => {
+  const step1ContinueBtn = document.getElementById('exchangeStep1Continue');
+  const exchangeOrderList = document.getElementById('exchangeOrderList');
+  const itemSelectionSection = document.getElementById('exchangeNewItemSection');
+  const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
+
+  let selectedOrder = null;
+
+  if (step1ContinueBtn) {
+    step1ContinueBtn.addEventListener('click', () => {
+      const customerData = validateStep1();
+      if (!customerData) return;
+      showOrderHistory(customerData);
+      step1ContinueBtn.disabled = true;
+    });
+  }
+
+  if (exchangeOrderList) {
+    exchangeOrderList.addEventListener('change', (e) => {
+      const orderId = e.target.value;
+      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      selectedOrder = orders.find(o => o['Order ID'] === orderId);
+      if (!selectedOrder) return;
+      itemSelectionSection.style.display = 'block';
+      exchangeSubmitBtn.style.display = 'inline-block';
+      populateExchangePreview(selectedOrder);
+    });
+  }
+
+  const newItemDropdown = document.getElementById('exchangeNewItem');
+  if (newItemDropdown) {
+    populateExchangeDropdowns();
+    newItemDropdown.addEventListener('change', (e) => {
+      const products = JSON.parse(localStorage.getItem('products') || '[]');
+      const newProd = products.find(p => p.id === e.target.value);
+      if (!newProd || !selectedOrder) return;
+      const delta = newProd.price - selectedOrder.Price;
+      document.getElementById('priceDelta').style.display = 'block';
+      document.getElementById('deltaAmount').textContent = `EGP ${delta.toFixed(2)}`;
+    });
+  }
+
+  const exchangeForm = document.getElementById('exchangeForm');
+  if (exchangeForm) {
+    exchangeForm.addEventListener('submit', async (evt) => {
+      evt.preventDefault();
+      if (!selectedOrder || !newItemDropdown.value) {
+        alert('Please select both old and new items.');
+        return;
+      }
+      const payload = {
+        originalOrderId: selectedOrder['Order ID'],
+        newProductId: newItemDropdown.value,
+        customer: getCustomerDetails(),
+        note: exchangeForm.note.value
+      };
+      const success = await sendReturnOrExchangeWebhook(payload, 'exchange');
+      if (success) alert('Exchange submitted!');
+      else alert('Submission failed.');
+      closeModal('exchangeModal');
+    });
+  }
+});

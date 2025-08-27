@@ -3635,3 +3635,21 @@ textarea:focus {
     margin-top: var(--spacing-xs);
   }
 }
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 480px) {
+  .header-content { flex-direction: column; height: auto; padding: 0.5rem; }
+  .nav { flex-direction: column; gap: 0.5rem; }
+  .products-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .hero-content { grid-template-columns: 1fr; padding: 2rem 1rem; }
+  .hero-title { font-size: 2rem; }
+  .product-name { font-size: 1rem; }
+}
+@media (min-width: 481px) and (max-width: 768px) {
+  .products-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-content { grid-template-columns: 1fr; }
+  .nav-dropdown .dropdown-menu { position: static; }
+}
+img, .product-image-container, .hero-image img {
+  max-width: 100%; height: auto;
+}
