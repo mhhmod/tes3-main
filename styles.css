@@ -3635,8 +3635,3 @@ textarea:focus {
     margin-top: var(--spacing-xs);
   }
 }
-
-/* UX: Clickable order cards */
-.order-item { cursor: pointer; }
-.order-item label { cursor: pointer; display:block; width:100%; }
-.order-item.selected { outline: 2px solid var(--primary-color); border-color: var(--primary-color); }
