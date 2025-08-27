@@ -549,41 +549,44 @@
 
                     <!-- Step 2: Order Selection -->
                     <div class="form-section" id="orderSelectionSection" style="display: none;">
-                        <h4>Step 2: Select Order to Exchange</h4>
-                        <div class="order-selection-grid" id="exchangeOrderList">
-                            <!-- Orders will be dynamically populated here -->
+                        <h4>Step 2: Select Order to Exchange From</h4>
+                        <div class="info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Select which order contains the item you want to exchange</span>
                         </div>
-                        <button type="button" id="step2ContinueBtn" class="btn btn-primary" disabled>
-                            Continue to Item Selection
-                        </button>
+                        <div id="exchangeOrderList" class="order-list"></div>
                     </div>
 
                     <!-- Step 3: Item Selection -->
                     <div class="form-section" id="itemSelectionSection" style="display: none;">
                         <h4>Step 3: Choose New Item</h4>
+                        
                         <div class="form-group">
-                            <label class="form-label">Select New Product</label>
+                            <label class="form-label">Select New Product *</label>
                             <select id="exchangeNewItem" class="form-input" required>
-                                <option value="">Select new item...</option>
+                                <!-- Populated dynamically -->
                             </select>
                         </div>
-                        
-                        <div id="exchangeProductPreview" class="product-preview"></div>
-                        
-                        <div class="price-delta" id="priceDelta" style="display: none;">
-                            <div class="delta-display">
-                                <span>Price Difference:</span>
-                                <span id="deltaAmount" class="delta-amount">0.00 EGP</span>
-                            </div>
-                            <div id="deltaExplanation" class="delta-explanation"></div>
+
+                        <div id="exchangeProductPreview" class="product-preview">
+                            <!-- Product preview will be populated here -->
                         </div>
-                        
+
+                        <div id="exchangeSummary" class="exchange-summary">
+                            <!-- Exchange summary details -->
+                        </div>
+
                         <div class="form-group">
                             <label class="form-label">Additional Notes (Optional)</label>
-                            <textarea name="note" class="form-input" rows="3" maxlength="500" placeholder="Add any additional comments about your exchange request"></textarea>
+                            <textarea name="note" class="form-input" rows="3" placeholder="Any additional details about your exchange"></textarea>
                         </div>
-                        
-                        <button type="submit" id="exchangeSubmit" class="btn btn-primary">
+
+                        <button 
+                            type="submit" 
+                            id="exchangeSubmit" 
+                            class="btn btn-primary btn-large" 
+                            style="display: none;"
+                        >
                             Submit Exchange Request
                         </button>
                     </div>
