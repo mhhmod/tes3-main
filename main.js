@@ -2569,6 +2569,21 @@ class GrindCTRLApp {
             const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
             const exchangeOrderList = document.getElementById('exchangeOrderList');
 
+            // Create "Continue" buttons early (before they're referenced)
+            const step1ContinueBtn = document.createElement('button');
+            step1ContinueBtn.type = 'button';
+            step1ContinueBtn.className = 'btn btn-primary';
+            step1ContinueBtn.textContent = 'Continue to Order Selection';
+            step1ContinueBtn.style.marginTop = 'var(--spacing-md)';
+
+            const step2ContinueBtn = document.createElement('button');
+            step2ContinueBtn.type = 'button';
+            step2ContinueBtn.className = 'btn btn-primary';
+            step2ContinueBtn.textContent = 'Continue to Item Selection';
+            step2ContinueBtn.style.display = 'none';
+            step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
+            step2ContinueBtn.disabled = true; // Initially disabled
+
             // Populate product dropdown for step 3
             this.populateExchangeDropdowns();
 
@@ -2599,6 +2614,7 @@ class GrindCTRLApp {
                 if (orders.length > 0) {
                     populateOrderSelect(exchangeOrderList, orders, step2ContinueBtn);
                     orderSelectionSection.style.display = 'block';
+                    step2ContinueBtn.style.display = 'block';  // Show the button
                     currentStep = 2;
 
                     // Scroll to order selection
@@ -2724,25 +2740,15 @@ class GrindCTRLApp {
 
             newItemSelect?.addEventListener('change', updatePriceCalculation);
 
-            // Handle "Continue" buttons for each step (we'll add these to the form)
-            const step1ContinueBtn = document.createElement('button');
-            step1ContinueBtn.type = 'button';
-            step1ContinueBtn.className = 'btn btn-primary';
-            step1ContinueBtn.textContent = 'Continue to Order Selection';
-            step1ContinueBtn.style.marginTop = 'var(--spacing-md)';
-
-            const step2ContinueBtn = document.createElement('button');
-            step2ContinueBtn.type = 'button';
-            step2ContinueBtn.className = 'btn btn-primary';
-            step2ContinueBtn.textContent = 'Continue to Item Selection';
-            step2ContinueBtn.style.display = 'none';
-            step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
-
-            // Insert continue buttons
+            // Insert continue buttons (they were already created earlier)
             const firstFormSection = exchangeForm.querySelector('.form-section:first-child');
-            firstFormSection.appendChild(step1ContinueBtn);
+            if (firstFormSection) {
+                firstFormSection.appendChild(step1ContinueBtn);
+            }
 
-            orderSelectionSection.appendChild(step2ContinueBtn);
+            if (orderSelectionSection) {
+                orderSelectionSection.appendChild(step2ContinueBtn);
+            }
 
             // Step 1 Continue Handler
             step1ContinueBtn.addEventListener('click', () => {
