@@ -2806,12 +2806,12 @@ class GrindCTRLApp {
             // Create visual product selection grid
             const createProductSelectionGrid = () => {
                 const productGridContainer = document.getElementById('exchangeProductGrid');
-                if (!productGridContainer || !this.state.products.length) return;
+                if (!productGridContainer || !app.state.products.length) return;
 
                 productGridContainer.innerHTML = `
                     <h4>Select New Product</h4>
                     <div class="exchange-product-grid">
-                        ${this.state.products.map(product => `
+                        ${app.state.products.map(product => `
                             <div class="exchange-product-card" data-product-id="${product.id}">
                                 <div class="product-image-container">
                                     <img src="${product.images[0]}" alt="${product.name}" class="product-image" loading="lazy">
@@ -2831,7 +2831,7 @@ class GrindCTRLApp {
                                     </div>
                                     ${product.rating ? `
                                         <div class="product-rating">
-                                            <div class="stars">${this.generateStars(product.rating)}</div>
+                                            <div class="stars">${app.generateStars(product.rating)}</div>
                                             <span class="rating-text">(${product.reviewCount || 0})</span>
                                         </div>
                                     ` : ''}
