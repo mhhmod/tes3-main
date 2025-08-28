@@ -2758,11 +2758,17 @@ class GrindCTRLApp {
             };
 
             // Step 3: Show Item Selection
-            const showItemSelection = (order) => {
+            const showItemSelection = async (order) => {
                 selectedOrder = order;
                 itemSelectionSection.style.display = 'block';
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
+
+                // Ensure products are loaded before creating grid
+                if (!app.state.products || app.state.products.length === 0) {
+                    console.log('[Debug] Products not loaded, loading now...');
+                    await app.loadProducts();
+                }
 
                 // Create product selection grid
                 createProductSelectionGrid();
@@ -2805,8 +2811,22 @@ class GrindCTRLApp {
             
             // Create visual product selection grid
             const createProductSelectionGrid = () => {
+                console.log('[Debug] Creating product selection grid...');
                 const productGridContainer = document.getElementById('exchangeProductGrid');
-                if (!productGridContainer || !app.state.products.length) return;
+                console.log('[Debug] Product grid container:', productGridContainer);
+                console.log('[Debug] Products available:', app.state.products);
+                console.log('[Debug] Products length:', app.state.products ? app.state.products.length : 'undefined');
+                
+                if (!productGridContainer) {
+                    console.log('[Debug] ERROR: exchangeProductGrid container not found!');
+                    return;
+                }
+                
+                if (!app.state.products || !app.state.products.length) {
+                    console.log('[Debug] ERROR: No products available in app.state.products');
+                    productGridContainer.innerHTML = '<p>No products available for exchange. Please try again later.</p>';
+                    return;
+                }
 
                 productGridContainer.innerHTML = `
                     <h4>Select New Product</h4>
@@ -2975,7 +2995,7 @@ class GrindCTRLApp {
             });
 
             // Step 2 Continue Handler
-            step2ContinueBtn.addEventListener('click', () => {
+            step2ContinueBtn.addEventListener('click', async () => {
                 const exchangeOrderList = document.getElementById('exchangeOrderList');
                 const selectedOrderId = exchangeOrderList.getSelectedOrderId ? exchangeOrderList.getSelectedOrderId() : null;
                 
@@ -2989,7 +3009,7 @@ class GrindCTRLApp {
                 const order = orders.find(o => o['Order ID'] === selectedOrderId);
 
                 if (order) {
-                    showItemSelection(order);
+                    await showItemSelection(order);
                     step2ContinueBtn.style.display = 'none';
                 } else {
                     this.notifications.error('Selected order not found. Please try again.');
