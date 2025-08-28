@@ -611,12 +611,8 @@ class GrindCTRLApp {
             
         } catch (error) {
             console.error('Failed to initialize app:', error);
-            this.notifications.error('Failed to load the application. Please refresh the page.');
-            // In case of a critical failure, hide all loading tasks
-            this.loading.hideAll();
-        } finally {
-            // Always hide the loading screen after initialization attempt
             this.loading.hide('init');
+            this.notifications.error('Failed to load application. Please refresh the page.');
         }
     }
 
@@ -2778,35 +2774,24 @@ class GrindCTRLApp {
 
             // Step 3: Show Item Selection
             const showItemSelection = async (order) => {
-                console.log('[DEBUG] === SHOW ITEM SELECTION START ===');
-                console.log('[DEBUG] Order received:', order);
-                console.log('[DEBUG] Current app.state.products:', app.state.products);
-                console.log('[DEBUG] Products length:', app.state.products ? app.state.products.length : 'undefined');
-                
                 selectedOrder = order;
                 itemSelectionSection.style.display = 'block';
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
 
-                // Force load products if not available
+                // Ensure products are loaded
                 if (!app.state.products || app.state.products.length === 0) {
-                    console.log('[DEBUG] Products not loaded, forcing load...');
                     await app.loadProducts();
-                    console.log('[DEBUG] After loadProducts, products:', app.state.products);
-                    console.log('[DEBUG] After loadProducts, length:', app.state.products ? app.state.products.length : 'undefined');
                 }
 
                 // Create product selection grid
-                console.log('[DEBUG] About to call createProductSelectionGrid...');
                 createProductSelectionGrid();
-                console.log('[DEBUG] createProductSelectionGrid completed');
 
                 // Scroll to item selection
                 itemSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                 // Show exchange summary
                 updateExchangeSummary(order);
-                console.log('[DEBUG] === SHOW ITEM SELECTION END ===');
             };
 
             // Update exchange summary
@@ -2840,53 +2825,31 @@ class GrindCTRLApp {
             
             // Create visual product selection grid
             const createProductSelectionGrid = () => {
-                console.log('[Debug] Creating product selection grid...');
                 const productGridContainer = document.getElementById('exchangeProductGrid');
-                console.log('[Debug] Product grid container:', productGridContainer);
-                console.log('[Debug] Products available:', app.state.products);
-                console.log('[Debug] Products length:', app.state.products ? app.state.products.length : 'undefined');
                 
                 if (!productGridContainer) {
-                    console.log('[Debug] ERROR: exchangeProductGrid container not found!');
                     return;
                 }
                 
                 if (!app.state.products || !app.state.products.length) {
-                    console.log('[Debug] ERROR: No products available in app.state.products');
-                    productGridContainer.innerHTML = '<p>No products available for exchange. Please try again later.</p>';
+                    productGridContainer.innerHTML = '<p>Loading products...</p>';
                     return;
                 }
 
                 productGridContainer.innerHTML = `
-                    <h4>Select New Product</h4>
-                    <div class="exchange-product-grid">
+                    <div class="exchange-product-list">
                         ${app.state.products.map(product => `
-                            <div class="exchange-product-card" data-product-id="${product.id}">
-                                <div class="product-image-container">
-                                    <img src="${product.images[0]}" alt="${product.name}" class="product-image" loading="lazy">
-                                    ${product.originalPrice ? `
-                                        <div class="discount-badge">
-                                            ${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                                        </div>
-                                    ` : ''}
-                                </div>
-                                <div class="product-info">
-                                    <h5 class="product-name">${product.name}</h5>
-                                    <div class="product-price">
-                                        <span class="current-price">${product.price.toFixed(2)} EGP</span>
-                                        ${product.originalPrice ? `
-                                            <span class="original-price">${product.originalPrice.toFixed(2)} EGP</span>
-                                        ` : ''}
+                            <div class="exchange-product-item" data-product-id="${product.id}" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 8px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <img src="${product.images[0]}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                    <div style="flex: 1;">
+                                        <h5 style="margin: 0 0 5px 0; font-size: 16px;">${product.name}</h5>
+                                        <div style="font-weight: bold; color: #e74c3c;">${product.price.toFixed(2)} EGP</div>
+                                        ${product.originalPrice ? `<div style="text-decoration: line-through; color: #999; font-size: 14px;">${product.originalPrice.toFixed(2)} EGP</div>` : ''}
                                     </div>
-                                    ${product.rating ? `
-                                        <div class="product-rating">
-                                            <div class="stars">${app.generateStars(product.rating)}</div>
-                                            <span class="rating-text">(${product.reviewCount || 0})</span>
-                                        </div>
-                                    ` : ''}
-                                    <div class="product-select-indicator">
-                                        <i class="fas fa-check-circle"></i>
-                                        <span>Click to select</span>
+                                    <div style="color: #27ae60;">
+                                        <i class="fas fa-check-circle" style="display: none;"></i>
+                                        <span>Select</span>
                                     </div>
                                 </div>
                             </div>
@@ -2894,18 +2857,25 @@ class GrindCTRLApp {
                     </div>
                 `;
 
-                // Add click handlers to product cards
-                const productCards = productGridContainer.querySelectorAll('.exchange-product-card');
-                productCards.forEach(card => {
-                    card.addEventListener('click', function() {
+                // Add click handlers to product items
+                const productItems = productGridContainer.querySelectorAll('.exchange-product-item');
+                productItems.forEach(item => {
+                    item.addEventListener('click', function() {
                         const productId = this.getAttribute('data-product-id');
                         const product = app.state.products.find(p => p.id === productId);
                         
                         if (product) {
-                            // Remove selection from all cards
-                            productCards.forEach(c => c.classList.remove('selected'));
-                            // Add selection to clicked card
-                            this.classList.add('selected');
+                            // Remove selection from all items
+                            productItems.forEach(i => {
+                                i.style.backgroundColor = '';
+                                i.querySelector('.fas').style.display = 'none';
+                                i.querySelector('span').textContent = 'Select';
+                            });
+                            
+                            // Add selection to clicked item
+                            this.style.backgroundColor = '#f0f8ff';
+                            this.querySelector('.fas').style.display = 'inline';
+                            this.querySelector('span').textContent = 'Selected';
                             
                             // Update selected product
                             selectedNewProduct = product;
