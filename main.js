@@ -551,12 +551,6 @@ class GrindCTRLApp {
     }
 
     async init() {
-        /**
-         * The initialization routine sets up the application state, fetches
-         * products, attaches event listeners, and triggers the first render.
-         * Regardless of success or failure, the loading screen should be
-         * dismissed so the user isn't stuck watching the spinner forever.
-         */
         try {
             this.loading.show('init');
 
@@ -567,29 +561,54 @@ class GrindCTRLApp {
 
             // Initialize UI components
             this.initializeEventListeners();
-            this.initializeNavigation();
+            this.initializeCart();
+            this.initializeWishlist();
             this.initializeModals();
-            this.initializeBackToTop();
             this.initializeNewsletterForm();
             this.initializeContactForm();
-
-            // Initialize return/exchange form handlers so customers can request
-            // returns or exchanges from the footer at any time.
             this.initializeReturnExchangeForms();
-
-            // Render initial content
-            this.renderCategories();
             this.renderProducts();
-            this.state.updateCartUI();
-            this.state.updateWishlistUI();
+            this.renderCategories();
 
-            // Initialize scroll animations
-            setTimeout(() => {
-                this.scrollAnimations = new ScrollAnimations();
-            }, 100);
+            // Initialize scroll effects
+            this.initializeScrollEffects();
+            
+            // Initialize back to top button
+            this.initializeBackToTop();
 
-            console.log('GrindCTRL App initialized successfully');
+            // Add debug function to global scope for testing
+            window.debugExchangeProducts = () => {
+                console.log('=== DEBUG EXCHANGE PRODUCTS ===');
+                console.log('app.state.products:', this.state.products);
+                console.log('Products length:', this.state.products ? this.state.products.length : 'undefined');
+                
+                const container = document.getElementById('exchangeProductGrid');
+                console.log('exchangeProductGrid container:', container);
+                
+                if (container && this.state.products && this.state.products.length > 0) {
+                    container.innerHTML = `
+                        <h4>DEBUG: Select New Product</h4>
+                        <div class="exchange-product-grid">
+                            ${this.state.products.map(product => `
+                                <div class="exchange-product-card" data-product-id="${product.id}">
+                                    <div class="product-info">
+                                        <h5 class="product-name">${product.name}</h5>
+                                        <div class="product-price">
+                                            <span class="current-price">${product.price.toFixed(2)} EGP</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    console.log('DEBUG: Products rendered successfully');
+                } else {
+                    console.log('DEBUG: Failed - container or products missing');
+                }
+            };
 
+            this.loading.hide('init');
+            
         } catch (error) {
             console.error('Failed to initialize app:', error);
             this.notifications.error('Failed to load the application. Please refresh the page.');
@@ -2759,25 +2778,35 @@ class GrindCTRLApp {
 
             // Step 3: Show Item Selection
             const showItemSelection = async (order) => {
+                console.log('[DEBUG] === SHOW ITEM SELECTION START ===');
+                console.log('[DEBUG] Order received:', order);
+                console.log('[DEBUG] Current app.state.products:', app.state.products);
+                console.log('[DEBUG] Products length:', app.state.products ? app.state.products.length : 'undefined');
+                
                 selectedOrder = order;
                 itemSelectionSection.style.display = 'block';
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
 
-                // Ensure products are loaded before creating grid
+                // Force load products if not available
                 if (!app.state.products || app.state.products.length === 0) {
-                    console.log('[Debug] Products not loaded, loading now...');
+                    console.log('[DEBUG] Products not loaded, forcing load...');
                     await app.loadProducts();
+                    console.log('[DEBUG] After loadProducts, products:', app.state.products);
+                    console.log('[DEBUG] After loadProducts, length:', app.state.products ? app.state.products.length : 'undefined');
                 }
 
                 // Create product selection grid
+                console.log('[DEBUG] About to call createProductSelectionGrid...');
                 createProductSelectionGrid();
+                console.log('[DEBUG] createProductSelectionGrid completed');
 
                 // Scroll to item selection
                 itemSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                 // Show exchange summary
                 updateExchangeSummary(order);
+                console.log('[DEBUG] === SHOW ITEM SELECTION END ===');
             };
 
             // Update exchange summary
@@ -3010,8 +3039,7 @@ class GrindCTRLApp {
 
                 if (order) {
                     await showItemSelection(order);
-                    itemSelectionSection.style.display = "block";
-                    step2ContinueBtn.style.display = "none";
+                    step2ContinueBtn.style.display = 'none';
                 } else {
                     this.notifications.error('Selected order not found. Please try again.');
                 }
