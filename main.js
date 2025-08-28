@@ -2684,20 +2684,20 @@ class GrindCTRLApp {
             const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
             const exchangeOrderList = document.getElementById('exchangeOrderList');
 
-            // Create "Continue" buttons early (before they're referenced)
-            const step1ContinueBtn = document.createElement('button');
-            step1ContinueBtn.type = 'button';
-            step1ContinueBtn.className = 'btn btn-primary';
-            step1ContinueBtn.textContent = 'Continue to Order Selection';
-            step1ContinueBtn.style.marginTop = 'var(--spacing-md)';
-
+            // Get the existing button from HTML
+            const step1ContinueBtn = document.getElementById('continueToOrderSelection');
+            
+            // Create step 2 continue button
             const step2ContinueBtn = document.createElement('button');
             step2ContinueBtn.type = 'button';
             step2ContinueBtn.className = 'btn btn-primary';
             step2ContinueBtn.textContent = 'Continue to Item Selection';
             step2ContinueBtn.style.display = 'none';
             step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
-            step2ContinueBtn.disabled = true; // Initially disabled
+            step2ContinueBtn.disabled = true;
+            
+            // Append step2 button to the order selection section
+            orderSelectionSection.appendChild(step2ContinueBtn);
 
 
             // Step 1: Customer Details Validation

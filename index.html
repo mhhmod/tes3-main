@@ -564,8 +564,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Reason for Exchange *</label>
-                            <textarea name="exchangeReason" class="form-input" rows="3" maxlength="500" placeholder="Please provide detailed reason for exchange" required></textarea>
+                            <label class="form-label">Note (optional)</label>
+                            <textarea name="note" class="form-input" rows="3" maxlength="500" placeholder="Any special instructions or details about the exchange"></textarea>
                         </div>
 
                         <div class="form-group">
@@ -575,7 +575,7 @@
                     </div>
 
                     <!-- Order Selection Section (will be populated by JS) -->
-                    <div class="form-section" id="exchangeOrderSelection" style="display: none;">
+                    <div class="form-section" id="orderSelectionSection" style="display: none;">
                         <h4>Select Order to Exchange</h4>
                         <div class="order-list" id="exchangeOrderList">
                             <!-- Populated by JavaScript -->
@@ -583,9 +583,18 @@
                     </div>
 
                     <!-- Exchange Product Selection (will be populated by JS) -->
-                    <div class="form-section" id="exchangeProductSelection" style="display: none;">
+                    <div class="form-section" id="itemSelectionSection" style="display: none;">
                         <h4>Choose New Product</h4>
                         <div class="exchange-product-grid" id="exchangeProductGrid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <!-- Price difference display -->
+                        <div id="priceDelta" style="display: none;">
+                            <h5>Price Difference: <span id="deltaAmount"></span></h5>
+                            <div id="deltaExplanation"></div>
+                        </div>
+                        <!-- Product preview section -->
+                        <div id="exchangeProductPreview" style="display: none;">
                             <!-- Populated by JavaScript -->
                         </div>
                     </div>
@@ -593,11 +602,12 @@
                     <!-- Exchange Summary (will be populated by JS) -->
                     <div class="form-section" id="exchangeSummary" style="display: none;">
                         <h4>Exchange Summary</h4>
-                        <div class="exchange-summary-content" id="exchangeSummaryContent">
+                        <div class="exchange-summary-content" id="summaryContent">
                             <!-- Populated by JavaScript -->
                         </div>
                     </div>
 
+                    <button type="button" class="btn btn-primary" id="continueToOrderSelection">Continue to Order Selection</button>
                     <button type="submit" class="btn btn-primary" id="exchangeSubmit" style="display: none;">Submit Exchange Request</button>
                 </form>
             </div>
