@@ -2339,6 +2339,11 @@ class GrindCTRLApp {
                 return;
             }
 
+            // Remove any existing event listeners by cloning the container
+            const newContainer = container.cloneNode(false);
+            container.parentNode.replaceChild(newContainer, container);
+            container = newContainer;
+
             // Create order selection with better information display
             orders.forEach(order => {
                 const item = document.createElement('div');
@@ -2348,10 +2353,27 @@ class GrindCTRLApp {
                 radio.type = 'radio';
                 radio.name = `${container.id}_radio`;
                 radio.value = order['Order ID'];
-                radio.id = `order_${order['Order ID']}`;
+                radio.id = `order_${order['Order ID'].replace(/[^a-zA-Z0-9]/g, '_')}`; // Sanitize ID
+
+                // Add direct event listener to each radio button
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        // Enable the submit button
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            console.log('Radio selected, enabling button:', submitBtn);
+                        }
+                        // Remove selected class from all items
+                        container.querySelectorAll('.order-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        // Add selected class to the selected item
+                        this.closest('.order-item').classList.add('selected');
+                    }
+                });
 
                 const label = document.createElement('label');
-                label.setAttribute('for', `order_${order['Order ID']}`);
+                label.setAttribute('for', radio.id);
                 label.innerHTML = `
                     <div class="order-header">
                         <strong>${order['Order ID']}</strong>
@@ -2371,19 +2393,6 @@ class GrindCTRLApp {
 
             container.style.display = 'block';
             if (submitBtn) submitBtn.disabled = true;
-
-            // Enable submit when an order is chosen
-            container.addEventListener('change', (e) => {
-                if (e.target && e.target.matches('input[type="radio"]')) {
-                    if (submitBtn) submitBtn.disabled = false;
-                    // Remove selected class from all items
-                    container.querySelectorAll('.order-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
-                    // Add selected class to the selected item
-                    e.target.closest('.order-item').classList.add('selected');
-                }
-            });
         };
 
         /**
@@ -2612,7 +2621,13 @@ class GrindCTRLApp {
             const showOrderHistory = (customerData) => {
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
                 if (orders.length > 0) {
-                    populateOrderSelect(exchangeOrderList, orders, step2ContinueBtn);
+                    // Need to update the reference to exchangeOrderList after populateOrderSelect
+                    const currentContainer = document.getElementById('exchangeOrderList');
+                    populateOrderSelect(currentContainer, orders, step2ContinueBtn);
+                    
+                    // Re-get the container in case it was replaced
+                    const updatedContainer = document.getElementById('exchangeOrderList');
+                    
                     orderSelectionSection.style.display = 'block';
                     step2ContinueBtn.style.display = 'block';  // Show the button
                     currentStep = 2;
@@ -2622,11 +2637,11 @@ class GrindCTRLApp {
 
                     // Auto-select first order for better UX
                     if (orders.length === 1) {
-                        const firstRadio = exchangeOrderList.querySelector('input[type="radio"]');
+                        const firstRadio = updatedContainer.querySelector('input[type="radio"]');
                         if (firstRadio) {
                             firstRadio.checked = true;
-                            step2ContinueBtn.disabled = false;
-                            firstRadio.closest('.order-item').classList.add('selected');
+                            // Trigger change event to enable button
+                            firstRadio.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     }
                 } else {
