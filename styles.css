@@ -1107,7 +1107,7 @@ a {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-xl);
     box-shadow: var(--shadow-xl);
-    z-index: var(--z-fixed);
+    z-index: var(--z-modal);
     transition: right var(--transition-medium);
     overflow: hidden;
     backdrop-filter: blur(10px);
@@ -1455,7 +1455,7 @@ a {
 .modal-content.checkout-modal {
     max-width: 1000px;
     max-height: 90vh;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
 }
 
 .modal.checkout-modal {
@@ -1794,9 +1794,10 @@ a {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xl);
-    height: auto;
-    overflow: visible;
+    height: 100%;
+    overflow: hidden;
 }
+
 .checkout-form {
     flex: 1;
     overflow-y: auto;
@@ -3440,6 +3441,12 @@ textarea.form-input {
         opacity: 0;
         pointer-events: none;
     }
+}
+    background: var(--primary-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes slideInLeft {
     from {
@@ -5702,4 +5709,3 @@ textarea:focus {
     transform: translate(-50%, -50%) !important;
   }
 }
-
