@@ -38,12 +38,16 @@ class AppState {
 
     storeOrder(orderData) {
         try {
+            console.log('[Debug] Storing order:', orderData);
             const orders = this.loadFromStorage('grindctrl_orders') || [];
+            console.log(`[Debug] Found ${orders.length} existing orders.`);
             orders.push(orderData);
             this.saveToStorage('grindctrl_orders', orders);
             this.orders = orders;
+            console.log(`[Debug] Successfully stored order. Total orders now: ${orders.length}`);
+            console.log('[Debug] Current orders in localStorage:', JSON.stringify(localStorage.getItem('grindctrl_orders')));
         } catch (error) {
-            console.error('Failed to store order:', error);
+            console.error('[Debug] Failed to store order:', error);
         }
     }
 
@@ -2378,21 +2382,29 @@ class GrindCTRLApp {
          * @returns {Array<Object>} A list of order objects matching the phone.
          */
         const getOrdersByPhone = (phone) => {
+            console.log(`[Debug] Getting orders by phone: ${phone}`);
             try {
-                const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
-                return orders.filter(o => (o.Phone && o.Phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, '')));
+                const allOrders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
+                console.log(`[Debug] Total orders in storage: ${allOrders.length}`);
+                const filteredOrders = allOrders.filter(o => (o.Phone && o.Phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, '')));
+                console.log(`[Debug] Found ${filteredOrders.length} orders for this phone.`);
+                return filteredOrders;
             } catch (error) {
-                console.error('Failed to get orders by phone:', error);
+                console.error('[Debug] Failed to get orders by phone:', error);
                 return [];
             }
         };
 
         const getOrdersByEmail = (email) => {
+            console.log(`[Debug] Getting orders by email: ${email}`);
             try {
-                const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
-                return orders.filter(o => (o['Customer Email'] && o['Customer Email'].toLowerCase() === email.toLowerCase()));
+                const allOrders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
+                console.log(`[Debug] Total orders in storage: ${allOrders.length}`);
+                const filteredOrders = allOrders.filter(o => (o['Customer Email'] && o['Customer Email'].toLowerCase() === email.toLowerCase()));
+                console.log(`[Debug] Found ${filteredOrders.length} orders for this email.`);
+                return filteredOrders;
             } catch (error) {
-                console.error('Failed to get orders by email:', error);
+                console.error('[Debug] Failed to get orders by email:', error);
                 return [];
             }
         };
@@ -2690,29 +2702,38 @@ class GrindCTRLApp {
 
             // Step 1: Customer Details Validation
             const validateStep1 = () => {
+                console.log('[Debug] Validating Step 1...');
                 const formData = new FormData(exchangeForm);
                 const data = {};
                 for (let [key, value] of formData.entries()) {
                     data[key] = value;
                 }
+                console.log('[Debug] Form data collected:', data);
 
                 if (!data.phone || !data.email || !data.firstName || !data.lastName || !data.address || !data.city) {
+                    console.log('[Debug] Validation failed: Missing required fields.');
                     this.notifications.error('Please fill in all required fields.');
                     return false;
                 }
 
                 if (!Utils.validateEmail(data.email)) {
+                    console.log('[Debug] Validation failed: Invalid email.');
                     this.notifications.error('Please enter a valid email address.');
                     return false;
                 }
 
+                console.log('[Debug] Validation successful.');
                 return data;
             };
 
             // Step 2: Show Order History
             const showOrderHistory = (customerData) => {
+                console.log('[Debug] Showing order history for:', customerData);
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
+                console.log(`[Debug] Found ${orders.length} orders.`);
+
                 if (orders.length > 0) {
+                    console.log('[Debug] Populating order select UI.');
                     const container = document.getElementById('exchangeOrderList');
                     populateOrderSelect(container, orders, step2ContinueBtn);
                     
@@ -2729,6 +2750,7 @@ class GrindCTRLApp {
                         }
                     }
                 } else {
+                    console.log('[Debug] No orders found. Displaying error.');
                     this.notifications.error('No previous orders found. Please contact support for exchanges.');
                     return false;
                 }
