@@ -2370,7 +2370,7 @@ class GrindCTRLApp {
                 const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
                 return orders.filter(o => (o.Phone && o.Phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, '')));
             } catch (error) {
-                console.warn('Failed to load orders for lookup:', error);
+                console.error('Failed to get orders by phone:', error);
                 return [];
             }
         };
@@ -2380,7 +2380,7 @@ class GrindCTRLApp {
                 const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
                 return orders.filter(o => (o['Customer Email'] && o['Customer Email'].toLowerCase() === email.toLowerCase()));
             } catch (error) {
-                console.warn('Failed to load orders for email lookup:', error);
+                console.error('Failed to get orders by email:', error);
                 return [];
             }
         };
@@ -2701,25 +2701,18 @@ class GrindCTRLApp {
             const showOrderHistory = (customerData) => {
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
                 if (orders.length > 0) {
-                    // Need to update the reference to exchangeOrderList after populateOrderSelect
-                    const currentContainer = document.getElementById('exchangeOrderList');
-                    populateOrderSelect(currentContainer, orders, step2ContinueBtn);
-                    
-                    // Re-get the container in case it was replaced
-                    const updatedContainer = document.getElementById('exchangeOrderList');
+                    const container = document.getElementById('exchangeOrderList');
+                    populateOrderSelect(container, orders, step2ContinueBtn);
                     
                     orderSelectionSection.style.display = 'block';
-                    step2ContinueBtn.style.display = 'block';  // Show the button
+                    step2ContinueBtn.style.display = 'block';
                     currentStep = 2;
 
-                    // Scroll to order selection
                     orderSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-                    // Auto-select first order for better UX
                     if (orders.length === 1) {
-                        const firstOrderItem = updatedContainer.querySelector('.order-item');
+                        const firstOrderItem = container.querySelector('.order-item');
                         if (firstOrderItem) {
-                            // Automatically click the first order item
                             firstOrderItem.click();
                         }
                     }
