@@ -2239,9 +2239,9 @@ class GrindCTRLApp {
     handleResize() {
         // Close mobile menu on resize
         if (window.innerWidth > 768) {
-            const nav = document.querySelector('.nav');
-            if (nav) {
-                nav.classList.remove('open');
+            const nav = document.querySelector(".nav");
+            if (nav && nav.classList.contains("open")) {
+                this.toggleMobileMenu();
             }
         }
     }
@@ -2275,7 +2275,8 @@ class GrindCTRLApp {
      * Open the exchange order modal.
      */
     openExchangeModal() {
-        this.openModal('exchange');
+        this.openModal("exchange");
+        this.populateExchangeDropdowns();
     }
 
     /**
@@ -2393,27 +2394,49 @@ class GrindCTRLApp {
          * @param {string} selectId ID of the order select dropdown.
          * @param {string} submitId ID of the submit button.
          */
-        const attachLookupHandlers = (phoneId, buttonId, containerId, submitId) => {
-            const phoneInput = document.getElementById(phoneId);
-            const findBtn = document.getElementById(buttonId);
-            const container = document.getElementById(containerId);
-            const submitBtn = document.getElementById(submitId);
-            if (!phoneInput || !findBtn || !container || !submitBtn) return;
-            findBtn.addEventListener('click', () => {
-                const phone = phoneInput.value.trim();
-                if (!phone) {
-                    this.notifications.error('Please enter a phone number.');
-                    return;
+        const exchangeForm = document.getElementById("exchangeForm");
+        if (exchangeForm) {
+            const oldItemSelect = document.getElementById("exchangeOldItem");
+            const newItemSelect = document.getElementById("exchangeNewItem");
+            const submitBtn = exchangeForm.querySelector("button[type='submit']");
+
+            const updateSubmitButtonState = () => {
+                if (oldItemSelect.value && newItemSelect.value) {
+                    submitBtn.disabled = false;
+                } else {
+                    submitBtn.disabled = true;
                 }
-                const orders = getOrdersByPhone(phone);
-                if (orders.length === 0) {
-                    this.notifications.error('No orders found for this phone number.');
-                    populateOrderSelect(container, [], submitBtn);
-                    return;
+            };
+
+            oldItemSelect.addEventListener("change", () => {
+                if (oldItemSelect.value) {
+                    newItemSelect.disabled = false;
                 }
-                populateOrderSelect(container, orders, submitBtn);
+                updateSubmitButtonState();
             });
-        };
+
+            newItemSelect.addEventListener("change", updateSubmitButtonState);
+
+            exchangeForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const oldOrderId = oldItemSelect.value;
+                const newOrderId = newItemSelect.value;
+
+                if (!oldOrderId || !newOrderId) {
+                    this.notifications.error("Please select both an old and a new item.");
+                    return;
+                }
+
+                const payload = {
+                    old_order_id: oldOrderId,
+                    new_order_id: newOrderId,
+                    customer_id: "customer_id_placeholder", // Replace with actual customer ID if available
+                };
+
+                this.sendWebhook(CONFIG.EXCHANGE_WEBHOOK_URL, payload, "Exchange request submitted successfully!");
+                this.closeModal("exchange");
+            });
+        }
 
         // Return and Exchange forms now use full customer details (no phone lookup)
 
