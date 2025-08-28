@@ -2079,27 +2079,6 @@ class GrindCTRLApp {
         }
     }
 
-    populateExchangeDropdowns() {
-        const oldItemSelect = document.getElementById('exchangeOldItem');
-        const newItemSelect = document.getElementById('exchangeNewItem');
-
-        if (!oldItemSelect || !newItemSelect || !this.state.products.length) return;
-
-        // Clear existing options except the first one
-        oldItemSelect.innerHTML = '<option value="">Choose item to exchange...</option>';
-        newItemSelect.innerHTML = '<option value="">Choose new item...</option>';
-
-        // Populate both dropdowns with product data
-        this.state.products.forEach(product => {
-            const optionText = `${product.name}${product.sku ? ` (${product.sku})` : ''} - ${product.price ? product.price.toFixed(2) : 'n/a'} EGP`;
-
-            const oldOption = new Option(optionText, product.id);
-            const newOption = new Option(optionText, product.id);
-
-            oldItemSelect.appendChild(oldOption);
-            newItemSelect.appendChild(newOption);
-        });
-    }
 
     renderExchangeProductPreview(product) {
         const mainImage = document.getElementById('exchangePreviewMainImage');
@@ -2705,8 +2684,6 @@ class GrindCTRLApp {
             step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
             step2ContinueBtn.disabled = true; // Initially disabled
 
-            // Populate product dropdown for step 3
-            this.populateExchangeDropdowns();
 
             // Step 1: Customer Details Validation
             const validateStep1 = () => {
