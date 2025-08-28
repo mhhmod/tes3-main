@@ -2774,17 +2774,25 @@ class GrindCTRLApp {
 
             // Step 3: Show Item Selection
             const showItemSelection = async (order) => {
+                console.log('[DEBUG] showItemSelection called with order:', order);
                 selectedOrder = order;
                 itemSelectionSection.style.display = 'block';
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
 
+                console.log('[DEBUG] Before loading products - app.state.products:', app.state.products);
+
                 // Ensure products are loaded
                 if (!app.state.products || app.state.products.length === 0) {
+                    console.log('[DEBUG] Products not loaded, calling app.loadProducts()');
                     await app.loadProducts();
+                    console.log('[DEBUG] After loading products - app.state.products:', app.state.products);
+                } else {
+                    console.log('[DEBUG] Products already loaded, count:', app.state.products.length);
                 }
 
                 // Create product selection grid
+                console.log('[DEBUG] Calling createProductSelectionGrid()');
                 createProductSelectionGrid();
 
                 // Scroll to item selection
@@ -2792,6 +2800,102 @@ class GrindCTRLApp {
 
                 // Show exchange summary
                 updateExchangeSummary(order);
+            };
+
+            // Create visual product selection grid
+            const createProductSelectionGrid = () => {
+                console.log('[DEBUG] createProductSelectionGrid called');
+
+                const productGridContainer = document.getElementById('exchangeProductGrid');
+                console.log('[DEBUG] productGridContainer:', productGridContainer);
+
+                if (!productGridContainer) {
+                    console.error('[DEBUG] exchangeProductGrid container not found!');
+                    return;
+                }
+
+                console.log('[DEBUG] app.state.products:', app.state.products);
+                console.log('[DEBUG] Products length:', app.state.products ? app.state.products.length : 'undefined');
+
+                if (!app.state.products || !app.state.products.length) {
+                    console.log('[DEBUG] No products available, showing loading message');
+                    productGridContainer.innerHTML = '<p>Loading products...</p>';
+                    return;
+                }
+
+                console.log('[DEBUG] Creating product grid with', app.state.products.length, 'products');
+
+                productGridContainer.innerHTML = `
+                    <div class="exchange-product-list">
+                        ${app.state.products.map(product => `
+                            <div class="exchange-product-item" data-product-id="${product.id}" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 8px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <img src="${product.images[0]}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                    <div style="flex: 1;">
+                                        <h5 style="margin: 0 0 5px 0; font-size: 16px;">${product.name}</h5>
+                                        <div style="font-weight: bold; color: #e74c3c;">${product.price.toFixed(2)} EGP</div>
+                                        ${product.originalPrice ? `<div style="text-decoration: line-through; color: #999; font-size: 14px;">${product.originalPrice.toFixed(2)} EGP</div>` : ''}
+                                    </div>
+                                    <div style="color: #27ae60;">
+                                        <i class="fas fa-check-circle" style="display: none;"></i>
+                                        <span>Select</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                console.log('[DEBUG] Product grid HTML created and inserted');
+
+                // Add click handlers to product items
+                const productItems = productGridContainer.querySelectorAll('.exchange-product-item');
+                productItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        const productId = this.getAttribute('data-product-id');
+                        const product = app.state.products.find(p => p.id === productId);
+
+                        if (product) {
+                            // Remove selection from all items
+                            productItems.forEach(i => {
+                                i.style.backgroundColor = '';
+                                i.querySelector('.fas').style.display = 'none';
+                                i.querySelector('span').textContent = 'Select';
+                            });
+
+                            // Add selection to clicked item
+                            this.style.backgroundColor = '#f0f8ff';
+                            this.querySelector('.fas').style.display = 'inline';
+                            this.querySelector('span').textContent = 'Selected';
+
+                            // Update selected product
+                            selectedNewProduct = product;
+
+                            // Update price calculation
+                            updatePriceCalculation();
+
+                            // Scroll to price comparison section
+                            setTimeout(() => {
+                                priceDeltaDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+                        }
+                    });
+
+                    // Add hover effects
+                    item.addEventListener('mouseenter', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'translateY(-2px)';
+                            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                        }
+                    });
+
+                    item.addEventListener('mouseleave', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'translateY(0)';
+                            this.style.boxShadow = '';
+                        }
+                    });
+                });
             };
 
             // Update exchange summary
@@ -2822,90 +2926,6 @@ class GrindCTRLApp {
             const deltaAmountSpan = document.getElementById('deltaAmount');
             const deltaExplanation = document.getElementById('deltaExplanation');
             const productPreview = document.getElementById('exchangeProductPreview');
-            
-            // Create visual product selection grid
-            const createProductSelectionGrid = () => {
-                const productGridContainer = document.getElementById('exchangeProductGrid');
-                
-                if (!productGridContainer) {
-                    return;
-                }
-                
-                if (!app.state.products || !app.state.products.length) {
-                    productGridContainer.innerHTML = '<p>Loading products...</p>';
-                    return;
-                }
-
-                productGridContainer.innerHTML = `
-                    <div class="exchange-product-list">
-                        ${app.state.products.map(product => `
-                            <div class="exchange-product-item" data-product-id="${product.id}" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 8px;">
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <img src="${product.images[0]}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
-                                    <div style="flex: 1;">
-                                        <h5 style="margin: 0 0 5px 0; font-size: 16px;">${product.name}</h5>
-                                        <div style="font-weight: bold; color: #e74c3c;">${product.price.toFixed(2)} EGP</div>
-                                        ${product.originalPrice ? `<div style="text-decoration: line-through; color: #999; font-size: 14px;">${product.originalPrice.toFixed(2)} EGP</div>` : ''}
-                                    </div>
-                                    <div style="color: #27ae60;">
-                                        <i class="fas fa-check-circle" style="display: none;"></i>
-                                        <span>Select</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-
-                // Add click handlers to product items
-                const productItems = productGridContainer.querySelectorAll('.exchange-product-item');
-                productItems.forEach(item => {
-                    item.addEventListener('click', function() {
-                        const productId = this.getAttribute('data-product-id');
-                        const product = app.state.products.find(p => p.id === productId);
-                        
-                        if (product) {
-                            // Remove selection from all items
-                            productItems.forEach(i => {
-                                i.style.backgroundColor = '';
-                                i.querySelector('.fas').style.display = 'none';
-                                i.querySelector('span').textContent = 'Select';
-                            });
-                            
-                            // Add selection to clicked item
-                            this.style.backgroundColor = '#f0f8ff';
-                            this.querySelector('.fas').style.display = 'inline';
-                            this.querySelector('span').textContent = 'Selected';
-                            
-                            // Update selected product
-                            selectedNewProduct = product;
-                            
-                            // Update price calculation
-                            updatePriceCalculation();
-                            
-                            // Scroll to price comparison section
-                            setTimeout(() => {
-                                priceDeltaDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 300);
-                        }
-                    });
-                    
-                    // Add hover effects
-                    card.addEventListener('mouseenter', function() {
-                        if (!this.classList.contains('selected')) {
-                            this.style.transform = 'translateY(-2px)';
-                            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                        }
-                    });
-                    
-                    card.addEventListener('mouseleave', function() {
-                        if (!this.classList.contains('selected')) {
-                            this.style.transform = 'translateY(0)';
-                            this.style.boxShadow = '';
-                        }
-                    });
-                });
-            };
 
             const updatePriceCalculation = () => {
                 if (selectedNewProduct && selectedOrder) {
@@ -2995,22 +3015,33 @@ class GrindCTRLApp {
 
             // Step 2 Continue Handler
             step2ContinueBtn.addEventListener('click', async () => {
+                console.log('[DEBUG] Step 2 continue button clicked');
+
                 const exchangeOrderList = document.getElementById('exchangeOrderList');
                 const selectedOrderId = exchangeOrderList.getSelectedOrderId ? exchangeOrderList.getSelectedOrderId() : null;
-                
+                console.log('[DEBUG] selectedOrderId:', selectedOrderId);
+
                 if (!selectedOrderId) {
+                    console.log('[DEBUG] No order selected');
                     this.notifications.error('Please select an order to exchange from.');
                     return;
                 }
 
                 const customerData = validateStep1();
+                console.log('[DEBUG] customerData:', customerData);
+
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
+                console.log('[DEBUG] Found orders:', orders);
+
                 const order = orders.find(o => o['Order ID'] === selectedOrderId);
+                console.log('[DEBUG] Selected order:', order);
 
                 if (order) {
+                    console.log('[DEBUG] Calling showItemSelection');
                     await showItemSelection(order);
                     step2ContinueBtn.style.display = 'none';
                 } else {
+                    console.log('[DEBUG] Order not found');
                     this.notifications.error('Selected order not found. Please try again.');
                 }
             });
