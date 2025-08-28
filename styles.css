@@ -2858,6 +2858,9 @@ textarea.form-input {
     overflow: hidden;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
     background: var(--background-surface);
+    max-height: 95vh !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .modern-exchange-modal .modal-header {
@@ -2886,6 +2889,9 @@ textarea.form-input {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    overflow-y: auto;
+    flex: 1;
+    height: 100%;
 }
 
 /* Products Comparison */
