@@ -2547,21 +2547,12 @@ class GrindCTRLApp {
                         // Pre-fill order ID if only one order found
                         if (orders.length === 1 && orderIdInput) {
                             orderIdInput.value = orders[0]['Order ID'];
-                            // Auto-select the radio button
-                            const radio = orderListContainer.querySelector('input[type="radio"]');
-                            if (radio) {
-                                radio.checked = true;
-                                step2ContinueBtn.disabled = false;
-                                radio.closest('.order-item').classList.add('selected');
-                            }
                         }
                     } else {
                         orderListContainer.style.display = 'none';
-                        step2ContinueBtn.disabled = true;
                     }
                 } else {
                     orderListContainer.style.display = 'none';
-                    step2ContinueBtn.disabled = true;
                 }
             };
 
@@ -3174,16 +3165,4 @@ document.addEventListener('keydown', function(e){
 GrindCTRLApp.prototype.openExchangeModal = function() {
     this.openModal('exchange');
     // The exchange form functionality is handled by initializeReturnExchangeForms()
-};
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-        if (modal.parentNode) {
-            modal.remove();
-        }
-    }, 10000);
 };
