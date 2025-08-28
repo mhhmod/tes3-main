@@ -2883,15 +2883,26 @@ textarea.form-input {
 /* Exchange Container */
 .exchange-container {
     padding: 2rem;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* Products Comparison */
 .products-comparison {
-    display: grid;
+    display: grid !important;
     grid-template-columns: 1fr auto 1fr;
     gap: 2rem;
     align-items: center;
     margin-bottom: 2rem;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.products-comparison > * {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* Product Cards */
