@@ -2802,6 +2802,7 @@ class GrindCTRLApp {
                 updateExchangeSummary(order);
             };
 
+
             // Create visual product selection grid
             const createProductSelectionGrid = () => {
                 console.log('[DEBUG] createProductSelectionGrid called');
