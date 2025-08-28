@@ -2382,16 +2382,6 @@ class GrindCTRLApp {
                     });
                     // Add selected class to the selected item
                     e.target.closest('.order-item').classList.add('selected');
-                    // Enable step2ContinueBtn if it's the exchange form
-                    const step2ContinueBtn = document.getElementById('step2ContinueBtn');
-                    if (container.id === 'exchangeOrderList' && step2ContinueBtn) {
-                        step2ContinueBtn.disabled = false;
-                    }
-                }
-            });p2ContinueBtn if it's the exchange form
-                    if (container.id === 'exchangeOrderList') {
-                        step2ContinueBtn.disabled = false;
-                    }
                 }
             });
         };
@@ -2734,6 +2724,7 @@ class GrindCTRLApp {
 
             newItemSelect?.addEventListener('change', updatePriceCalculation);
 
+            // Handle "Continue" buttons for each step (we'll add these to the form)
             const step1ContinueBtn = document.createElement('button');
             step1ContinueBtn.type = 'button';
             step1ContinueBtn.className = 'btn btn-primary';
@@ -2744,8 +2735,7 @@ class GrindCTRLApp {
             step2ContinueBtn.type = 'button';
             step2ContinueBtn.className = 'btn btn-primary';
             step2ContinueBtn.textContent = 'Continue to Item Selection';
-            step2ContinueBtn.id = 'step2ContinueBtn'; // Add ID for easy access
-            step2ContinueBtn.style.display = 'none'; // Initially hidden
+            step2ContinueBtn.style.display = 'none';
             step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
 
             // Insert continue buttons
@@ -2759,7 +2749,6 @@ class GrindCTRLApp {
                 const customerData = validateStep1();
                 if (customerData && showOrderHistory(customerData)) {
                     step1ContinueBtn.style.display = 'none';
-                    step2ContinueBtn.style.display = 'block'; // Show step 2 continue button
                 }
             });
 
@@ -2778,8 +2767,6 @@ class GrindCTRLApp {
                 if (order) {
                     showItemSelection(order);
                     step2ContinueBtn.style.display = 'none';
-                    exchangeSubmitBtn.style.display = 'block'; // Show submit button
-                }   exchangeSubmitBtn.style.display = 'block'; // Show submit button
                 }
             });
 
