@@ -3095,6 +3095,22 @@ window.scrollToSection = function(sectionId) {
     }
 };
 
+// Open Exchange Modal Function
+GrindCTRLApp.prototype.openExchangeModal = function() {
+    const modal = document.getElementById('exchangeModal');
+    if (modal) {
+        modal.classList.add('open');
+        // Initialize exchange interface
+        this.initializeExchangeInterface();
+    }
+};
+
+// Initialize Exchange Interface
+GrindCTRLApp.prototype.initializeExchangeInterface = function() {
+    // Setup any dynamic content or event handlers for the exchange modal
+    console.log('Exchange modal opened successfully');
+};
+
 window.openLookbook = function() {
     if (window.app) {
         window.app.openLookbook();
