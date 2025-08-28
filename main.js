@@ -24,7 +24,6 @@ class AppState {
         };
         this.checkoutStep = 1;
         this.orderData = null;
-        this.orders = this.loadFromStorage('grindctrl_orders') || [];
     }
 
     // Persistent storage methods
@@ -32,22 +31,7 @@ class AppState {
         try {
             localStorage.setItem(key, JSON.stringify(data));
         } catch (error) {
-            console.error(`Failed to save ${key} to storage:`, error);
-        }
-    }
-
-    storeOrder(orderData) {
-        try {
-            console.log('[Debug] Storing order:', orderData);
-            const orders = this.loadFromStorage('grindctrl_orders') || [];
-            console.log(`[Debug] Found ${orders.length} existing orders.`);
-            orders.push(orderData);
-            this.saveToStorage('grindctrl_orders', orders);
-            this.orders = orders;
-            console.log(`[Debug] Successfully stored order. Total orders now: ${orders.length}`);
-            console.log('[Debug] Current orders in localStorage:', JSON.stringify(localStorage.getItem('grindctrl_orders')));
-        } catch (error) {
-            console.error('[Debug] Failed to store order:', error);
+            console.warn('Failed to save to localStorage:', error);
         }
     }
 
@@ -551,6 +535,12 @@ class GrindCTRLApp {
     }
 
     async init() {
+        /**
+         * The initialization routine sets up the application state, fetches
+         * products, attaches event listeners, and triggers the first render.
+         * Regardless of success or failure, the loading screen should be
+         * dismissed so the user isn't stuck watching the spinner forever.
+         */
         try {
             this.loading.show('init');
 
@@ -561,58 +551,37 @@ class GrindCTRLApp {
 
             // Initialize UI components
             this.initializeEventListeners();
-            this.initializeCart();
-            this.initializeWishlist();
+            this.initializeNavigation();
             this.initializeModals();
+            this.initializeBackToTop();
             this.initializeNewsletterForm();
             this.initializeContactForm();
+
+            // Initialize return/exchange form handlers so customers can request
+            // returns or exchanges from the footer at any time.
             this.initializeReturnExchangeForms();
-            this.renderProducts();
+
+            // Render initial content
             this.renderCategories();
+            this.renderProducts();
+            this.state.updateCartUI();
+            this.state.updateWishlistUI();
 
-            // Initialize scroll effects
-            this.initializeScrollEffects();
-            
-            // Initialize back to top button
-            this.initializeBackToTop();
+            // Initialize scroll animations
+            setTimeout(() => {
+                this.scrollAnimations = new ScrollAnimations();
+            }, 100);
 
-            // Add debug function to global scope for testing
-            window.debugExchangeProducts = () => {
-                console.log('=== DEBUG EXCHANGE PRODUCTS ===');
-                console.log('app.state.products:', this.state.products);
-                console.log('Products length:', this.state.products ? this.state.products.length : 'undefined');
-                
-                const container = document.getElementById('exchangeProductGrid');
-                console.log('exchangeProductGrid container:', container);
-                
-                if (container && this.state.products && this.state.products.length > 0) {
-                    container.innerHTML = `
-                        <h4>DEBUG: Select New Product</h4>
-                        <div class="exchange-product-grid">
-                            ${this.state.products.map(product => `
-                                <div class="exchange-product-card" data-product-id="${product.id}">
-                                    <div class="product-info">
-                                        <h5 class="product-name">${product.name}</h5>
-                                        <div class="product-price">
-                                            <span class="current-price">${product.price.toFixed(2)} EGP</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                    console.log('DEBUG: Products rendered successfully');
-                } else {
-                    console.log('DEBUG: Failed - container or products missing');
-                }
-            };
+            console.log('GrindCTRL App initialized successfully');
 
-            this.loading.hide('init');
-            
         } catch (error) {
             console.error('Failed to initialize app:', error);
+            this.notifications.error('Failed to load the application. Please refresh the page.');
+            // In case of a critical failure, hide all loading tasks
+            this.loading.hideAll();
+        } finally {
+            // Always hide the loading screen after initialization attempt
             this.loading.hide('init');
-            this.notifications.error('Failed to load application. Please refresh the page.');
         }
     }
 
@@ -1676,7 +1645,7 @@ class GrindCTRLApp {
 
             if (success) {
                 // Persist this order in localStorage so customers can look it up by phone
-                this.state.storeOrder(orderData);
+                this.storeOrder(orderData);
                 this.showOrderSuccess(orderData);
                 this.state.clearCart();
                 this.closeModal('checkout');
@@ -2397,29 +2366,21 @@ class GrindCTRLApp {
          * @returns {Array<Object>} A list of order objects matching the phone.
          */
         const getOrdersByPhone = (phone) => {
-            console.log(`[Debug] Getting orders by phone: ${phone}`);
             try {
-                const allOrders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
-                console.log(`[Debug] Total orders in storage: ${allOrders.length}`);
-                const filteredOrders = allOrders.filter(o => (o.Phone && o.Phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, '')));
-                console.log(`[Debug] Found ${filteredOrders.length} orders for this phone.`);
-                return filteredOrders;
+                const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
+                return orders.filter(o => (o.Phone && o.Phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, '')));
             } catch (error) {
-                console.error('[Debug] Failed to get orders by phone:', error);
+                console.warn('Failed to load orders for lookup:', error);
                 return [];
             }
         };
 
         const getOrdersByEmail = (email) => {
-            console.log(`[Debug] Getting orders by email: ${email}`);
             try {
-                const allOrders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
-                console.log(`[Debug] Total orders in storage: ${allOrders.length}`);
-                const filteredOrders = allOrders.filter(o => (o['Customer Email'] && o['Customer Email'].toLowerCase() === email.toLowerCase()));
-                console.log(`[Debug] Found ${filteredOrders.length} orders for this email.`);
-                return filteredOrders;
+                const orders = JSON.parse(localStorage.getItem('grindctrl_orders')) || [];
+                return orders.filter(o => (o['Customer Email'] && o['Customer Email'].toLowerCase() === email.toLowerCase()));
             } catch (error) {
-                console.error('[Debug] Failed to get orders by email:', error);
+                console.warn('Failed to load orders for email lookup:', error);
                 return [];
             }
         };
@@ -2586,12 +2547,21 @@ class GrindCTRLApp {
                         // Pre-fill order ID if only one order found
                         if (orders.length === 1 && orderIdInput) {
                             orderIdInput.value = orders[0]['Order ID'];
+                            // Auto-select the radio button
+                            const radio = orderListContainer.querySelector('input[type="radio"]');
+                            if (radio) {
+                                radio.checked = true;
+                                step2ContinueBtn.disabled = false;
+                                radio.closest('.order-item').classList.add('selected');
+                            }
                         }
                     } else {
                         orderListContainer.style.display = 'none';
+                        step2ContinueBtn.disabled = true;
                     }
                 } else {
                     orderListContainer.style.display = 'none';
+                    step2ContinueBtn.disabled = true;
                 }
             };
 
@@ -2699,73 +2669,70 @@ class GrindCTRLApp {
             const exchangeSubmitBtn = document.getElementById('exchangeSubmit');
             const exchangeOrderList = document.getElementById('exchangeOrderList');
 
-            // Get the existing button from HTML
-            const step1ContinueBtn = document.getElementById('continueToOrderSelection');
-            
-            // Create step 2 continue button
+            // Create "Continue" buttons early (before they're referenced)
+            const step1ContinueBtn = document.createElement('button');
+            step1ContinueBtn.type = 'button';
+            step1ContinueBtn.className = 'btn btn-primary';
+            step1ContinueBtn.textContent = 'Continue to Order Selection';
+            step1ContinueBtn.style.marginTop = 'var(--spacing-md)';
+
             const step2ContinueBtn = document.createElement('button');
             step2ContinueBtn.type = 'button';
             step2ContinueBtn.className = 'btn btn-primary';
             step2ContinueBtn.textContent = 'Continue to Item Selection';
             step2ContinueBtn.style.display = 'none';
             step2ContinueBtn.style.marginTop = 'var(--spacing-md)';
-            step2ContinueBtn.disabled = true;
-            
-            // Append step2 button to the order selection section
-            orderSelectionSection.appendChild(step2ContinueBtn);
+            step2ContinueBtn.disabled = true; // Initially disabled
 
 
             // Step 1: Customer Details Validation
             const validateStep1 = () => {
-                console.log('[Debug] Validating Step 1...');
                 const formData = new FormData(exchangeForm);
                 const data = {};
                 for (let [key, value] of formData.entries()) {
                     data[key] = value;
                 }
-                console.log('[Debug] Form data collected:', data);
 
                 if (!data.phone || !data.email || !data.firstName || !data.lastName || !data.address || !data.city) {
-                    console.log('[Debug] Validation failed: Missing required fields.');
                     this.notifications.error('Please fill in all required fields.');
                     return false;
                 }
 
                 if (!Utils.validateEmail(data.email)) {
-                    console.log('[Debug] Validation failed: Invalid email.');
                     this.notifications.error('Please enter a valid email address.');
                     return false;
                 }
 
-                console.log('[Debug] Validation successful.');
                 return data;
             };
 
             // Step 2: Show Order History
             const showOrderHistory = (customerData) => {
-                console.log('[Debug] Showing order history for:', customerData);
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
-                console.log(`[Debug] Found ${orders.length} orders.`);
-
                 if (orders.length > 0) {
-                    console.log('[Debug] Populating order select UI.');
-                    const container = document.getElementById('exchangeOrderList');
-                    populateOrderSelect(container, orders, step2ContinueBtn);
+                    // Need to update the reference to exchangeOrderList after populateOrderSelect
+                    const currentContainer = document.getElementById('exchangeOrderList');
+                    populateOrderSelect(currentContainer, orders, step2ContinueBtn);
+                    
+                    // Re-get the container in case it was replaced
+                    const updatedContainer = document.getElementById('exchangeOrderList');
                     
                     orderSelectionSection.style.display = 'block';
-                    step2ContinueBtn.style.display = 'block';
+                    step2ContinueBtn.style.display = 'block';  // Show the button
                     currentStep = 2;
 
+                    // Scroll to order selection
                     orderSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+                    // Auto-select first order for better UX
                     if (orders.length === 1) {
-                        const firstOrderItem = container.querySelector('.order-item');
+                        const firstOrderItem = updatedContainer.querySelector('.order-item');
                         if (firstOrderItem) {
+                            // Automatically click the first order item
                             firstOrderItem.click();
                         }
                     }
                 } else {
-                    console.log('[Debug] No orders found. Displaying error.');
                     this.notifications.error('No previous orders found. Please contact support for exchanges.');
                     return false;
                 }
@@ -2773,26 +2740,13 @@ class GrindCTRLApp {
             };
 
             // Step 3: Show Item Selection
-            const showItemSelection = async (order) => {
-                console.log('[DEBUG] showItemSelection called with order:', order);
+            const showItemSelection = (order) => {
                 selectedOrder = order;
                 itemSelectionSection.style.display = 'block';
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
 
-                console.log('[DEBUG] Before loading products - app.state.products:', app.state.products);
-
-                // Ensure products are loaded
-                if (!app.state.products || app.state.products.length === 0) {
-                    console.log('[DEBUG] Products not loaded, calling app.loadProducts()');
-                    await app.loadProducts();
-                    console.log('[DEBUG] After loading products - app.state.products:', app.state.products);
-                } else {
-                    console.log('[DEBUG] Products already loaded, count:', app.state.products.length);
-                }
-
                 // Create product selection grid
-                console.log('[DEBUG] Calling createProductSelectionGrid()');
                 createProductSelectionGrid();
 
                 // Scroll to item selection
@@ -2800,103 +2754,6 @@ class GrindCTRLApp {
 
                 // Show exchange summary
                 updateExchangeSummary(order);
-            };
-
-
-            // Create visual product selection grid
-            const createProductSelectionGrid = () => {
-                console.log('[DEBUG] createProductSelectionGrid called');
-
-                const productGridContainer = document.getElementById('exchangeProductGrid');
-                console.log('[DEBUG] productGridContainer:', productGridContainer);
-
-                if (!productGridContainer) {
-                    console.error('[DEBUG] exchangeProductGrid container not found!');
-                    return;
-                }
-
-                console.log('[DEBUG] app.state.products:', app.state.products);
-                console.log('[DEBUG] Products length:', app.state.products ? app.state.products.length : 'undefined');
-
-                if (!app.state.products || !app.state.products.length) {
-                    console.log('[DEBUG] No products available, showing loading message');
-                    productGridContainer.innerHTML = '<p>Loading products...</p>';
-                    return;
-                }
-
-                console.log('[DEBUG] Creating product grid with', app.state.products.length, 'products');
-
-                productGridContainer.innerHTML = `
-                    <div class="exchange-product-list">
-                        ${app.state.products.map(product => `
-                            <div class="exchange-product-item" data-product-id="${product.id}" style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 8px;">
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <img src="${product.images[0]}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
-                                    <div style="flex: 1;">
-                                        <h5 style="margin: 0 0 5px 0; font-size: 16px;">${product.name}</h5>
-                                        <div style="font-weight: bold; color: #e74c3c;">${product.price.toFixed(2)} EGP</div>
-                                        ${product.originalPrice ? `<div style="text-decoration: line-through; color: #999; font-size: 14px;">${product.originalPrice.toFixed(2)} EGP</div>` : ''}
-                                    </div>
-                                    <div style="color: #27ae60;">
-                                        <i class="fas fa-check-circle" style="display: none;"></i>
-                                        <span>Select</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-
-                console.log('[DEBUG] Product grid HTML created and inserted');
-
-                // Add click handlers to product items
-                const productItems = productGridContainer.querySelectorAll('.exchange-product-item');
-                productItems.forEach(item => {
-                    item.addEventListener('click', function() {
-                        const productId = this.getAttribute('data-product-id');
-                        const product = app.state.products.find(p => p.id === productId);
-
-                        if (product) {
-                            // Remove selection from all items
-                            productItems.forEach(i => {
-                                i.style.backgroundColor = '';
-                                i.querySelector('.fas').style.display = 'none';
-                                i.querySelector('span').textContent = 'Select';
-                            });
-
-                            // Add selection to clicked item
-                            this.style.backgroundColor = '#f0f8ff';
-                            this.querySelector('.fas').style.display = 'inline';
-                            this.querySelector('span').textContent = 'Selected';
-
-                            // Update selected product
-                            selectedNewProduct = product;
-
-                            // Update price calculation
-                            updatePriceCalculation();
-
-                            // Scroll to price comparison section
-                            setTimeout(() => {
-                                priceDeltaDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 300);
-                        }
-                    });
-
-                    // Add hover effects
-                    item.addEventListener('mouseenter', function() {
-                        if (!this.classList.contains('selected')) {
-                            this.style.transform = 'translateY(-2px)';
-                            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                        }
-                    });
-
-                    item.addEventListener('mouseleave', function() {
-                        if (!this.classList.contains('selected')) {
-                            this.style.transform = 'translateY(0)';
-                            this.style.boxShadow = '';
-                        }
-                    });
-                });
             };
 
             // Update exchange summary
@@ -2927,6 +2784,91 @@ class GrindCTRLApp {
             const deltaAmountSpan = document.getElementById('deltaAmount');
             const deltaExplanation = document.getElementById('deltaExplanation');
             const productPreview = document.getElementById('exchangeProductPreview');
+            
+            // Create visual product selection grid
+            const createProductSelectionGrid = () => {
+                const productGridContainer = document.getElementById('exchangeProductGrid');
+                if (!productGridContainer || !this.state.products.length) return;
+
+                productGridContainer.innerHTML = `
+                    <h4>Select New Product</h4>
+                    <div class="exchange-product-grid">
+                        ${this.state.products.map(product => `
+                            <div class="exchange-product-card" data-product-id="${product.id}">
+                                <div class="product-image-container">
+                                    <img src="${product.images[0]}" alt="${product.name}" class="product-image" loading="lazy">
+                                    ${product.originalPrice ? `
+                                        <div class="discount-badge">
+                                            ${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="product-info">
+                                    <h5 class="product-name">${product.name}</h5>
+                                    <div class="product-price">
+                                        <span class="current-price">${product.price.toFixed(2)} EGP</span>
+                                        ${product.originalPrice ? `
+                                            <span class="original-price">${product.originalPrice.toFixed(2)} EGP</span>
+                                        ` : ''}
+                                    </div>
+                                    ${product.rating ? `
+                                        <div class="product-rating">
+                                            <div class="stars">${this.generateStars(product.rating)}</div>
+                                            <span class="rating-text">(${product.reviewCount || 0})</span>
+                                        </div>
+                                    ` : ''}
+                                    <div class="product-select-indicator">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Click to select</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Add click handlers to product cards
+                const productCards = productGridContainer.querySelectorAll('.exchange-product-card');
+                productCards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        const productId = this.getAttribute('data-product-id');
+                        const product = app.state.products.find(p => p.id === productId);
+                        
+                        if (product) {
+                            // Remove selection from all cards
+                            productCards.forEach(c => c.classList.remove('selected'));
+                            // Add selection to clicked card
+                            this.classList.add('selected');
+                            
+                            // Update selected product
+                            selectedNewProduct = product;
+                            
+                            // Update price calculation
+                            updatePriceCalculation();
+                            
+                            // Scroll to price comparison section
+                            setTimeout(() => {
+                                priceDeltaDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+                        }
+                    });
+                    
+                    // Add hover effects
+                    card.addEventListener('mouseenter', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'translateY(-2px)';
+                            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                        }
+                    });
+                    
+                    card.addEventListener('mouseleave', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'translateY(0)';
+                            this.style.boxShadow = '';
+                        }
+                    });
+                });
+            };
 
             const updatePriceCalculation = () => {
                 if (selectedNewProduct && selectedOrder) {
@@ -3015,34 +2957,23 @@ class GrindCTRLApp {
             });
 
             // Step 2 Continue Handler
-            step2ContinueBtn.addEventListener('click', async () => {
-                console.log('[DEBUG] Step 2 continue button clicked');
-
+            step2ContinueBtn.addEventListener('click', () => {
                 const exchangeOrderList = document.getElementById('exchangeOrderList');
                 const selectedOrderId = exchangeOrderList.getSelectedOrderId ? exchangeOrderList.getSelectedOrderId() : null;
-                console.log('[DEBUG] selectedOrderId:', selectedOrderId);
-
+                
                 if (!selectedOrderId) {
-                    console.log('[DEBUG] No order selected');
                     this.notifications.error('Please select an order to exchange from.');
                     return;
                 }
 
                 const customerData = validateStep1();
-                console.log('[DEBUG] customerData:', customerData);
-
                 const orders = getOrdersByPhoneOrEmail(customerData.phone, customerData.email);
-                console.log('[DEBUG] Found orders:', orders);
-
                 const order = orders.find(o => o['Order ID'] === selectedOrderId);
-                console.log('[DEBUG] Selected order:', order);
 
                 if (order) {
-                    console.log('[DEBUG] Calling showItemSelection');
-                    await showItemSelection(order);
+                    showItemSelection(order);
                     step2ContinueBtn.style.display = 'none';
                 } else {
-                    console.log('[DEBUG] Order not found');
                     this.notifications.error('Selected order not found. Please try again.');
                 }
             });
@@ -3164,7 +3095,6 @@ window.scrollToSection = function(sectionId) {
     }
 };
 
-
 window.openLookbook = function() {
     if (window.app) {
         window.app.openLookbook();
@@ -3235,12 +3165,3 @@ document.addEventListener('keydown', function(e){
     try { window.app && app.closeAllModals && app.closeAllModals(); } catch(_){}
   }
 });
-
-/**
- * Open the exchange order modal. This now uses the proper form-based exchange process
- * that matches the return modal functionality.
- */
-GrindCTRLApp.prototype.openExchangeModal = function() {
-    this.openModal('exchange');
-    // The exchange form functionality is handled by initializeReturnExchangeForms()
-};

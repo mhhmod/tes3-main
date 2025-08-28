@@ -523,8 +523,9 @@
             </div>
             <div class="modal-body">
                 <form id="exchangeForm" class="checkout-form">
+                    <!-- Step 1: Customer Details -->
                     <div class="form-section">
-                        <h4>Exchange Request Details</h4>
+                        <h4>Step 1: Your Details</h4>
 
                         <div class="form-group">
                             <label class="form-label">Phone Number *</label>
@@ -562,53 +563,61 @@
                                 <input type="text" name="postalCode" class="form-input" required>
                             </div>
                         </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Note (optional)</label>
-                            <textarea name="note" class="form-input" rows="3" maxlength="500" placeholder="Any special instructions or details about the exchange"></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Order ID (if known)</label>
-                            <input type="text" name="orderId" class="form-input" placeholder="Optional - leave blank if unknown">
-                        </div>
                     </div>
 
-                    <!-- Order Selection Section (will be populated by JS) -->
+                    <!-- Step 2: Order Selection -->
                     <div class="form-section" id="orderSelectionSection" style="display: none;">
-                        <h4>Select Order to Exchange</h4>
-                        <div class="order-list" id="exchangeOrderList">
-                            <!-- Populated by JavaScript -->
+                        <h4>Step 2: Select Order to Exchange From</h4>
+                        <div class="info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Select which order contains the item you want to exchange</span>
                         </div>
+                        <div id="exchangeOrderList" class="order-list"></div>
                     </div>
 
-                    <!-- Exchange Product Selection (will be populated by JS) -->
+                    <!-- Step 3: Item Selection -->
                     <div class="form-section" id="itemSelectionSection" style="display: none;">
-                        <h4>Choose New Product</h4>
-                        <div class="exchange-product-grid" id="exchangeProductGrid">
-                            <!-- Populated by JavaScript -->
+                        <h4>Step 3: Choose New Item</h4>
+                        <div class="info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Choose the new item you'd like to exchange to</span>
                         </div>
-                        <!-- Price difference display -->
-                        <div id="priceDelta" style="display: none;">
-                            <h5>Price Difference: <span id="deltaAmount"></span></h5>
-                            <div id="deltaExplanation"></div>
+
+                        <div id="exchangeProductGrid">
+                            <!-- Visual product grid populated by JavaScript -->
                         </div>
-                        <!-- Product preview section -->
-                        <div id="exchangeProductPreview" style="display: none;">
-                            <!-- Populated by JavaScript -->
+
+                        <!-- Product Preview Section -->
+                        <div class="product-preview" id="exchangeProductPreview" style="display: none;">
+                            <h5>New Item Preview</h5>
+                            <div class="preview-images">
+                                <img id="exchangePreviewMainImage" src="" alt="" class="preview-main-image">
+                                <div class="preview-thumbnails" id="exchangePreviewThumbnails"></div>
+                            </div>
+                            <div class="preview-details" id="exchangePreviewDetails"></div>
+                        </div>
+
+                        <!-- Exchange Summary -->
+                        <div class="exchange-summary" id="exchangeSummary" style="display: none;">
+                            <h5>Exchange Summary</h5>
+                            <div class="summary-content" id="summaryContent"></div>
+                        </div>
+
+                        <div class="price-delta" id="priceDelta" style="display: none;">
+                            <div class="delta-display">
+                                <span class="delta-label">Price Difference:</span>
+                                <span class="delta-amount" id="deltaAmount">EGP 0.00</span>
+                            </div>
+                            <div class="delta-explanation" id="deltaExplanation"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Exchange Note</label>
+                            <textarea name="note" class="form-input" rows="3" maxlength="500" placeholder="Add any additional comments about your exchange request"></textarea>
                         </div>
                     </div>
 
-                    <!-- Exchange Summary (will be populated by JS) -->
-                    <div class="form-section" id="exchangeSummary" style="display: none;">
-                        <h4>Exchange Summary</h4>
-                        <div class="exchange-summary-content" id="summaryContent">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-
-                    <button type="button" class="btn btn-primary" id="continueToOrderSelection">Continue to Order Selection</button>
-                    <button type="submit" class="btn btn-primary" id="exchangeSubmit" style="display: none;">Submit Exchange Request</button>
+                    <button type="submit" id="exchangeSubmit" class="btn btn-primary" style="display: none;">Submit Exchange Request</button>
                 </form>
             </div>
         </div>
