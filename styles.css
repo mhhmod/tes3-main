@@ -5506,3 +5506,207 @@ textarea:focus {
   .exchange-comparison .item-name { font-size: 0.9rem !important; }
 }
 
+
+/* =========================================================
+   Exchange Comparison — Symmetric Text Layout (2025-08-28)
+   Objective: perfect bilateral symmetry, text-first, no imagery.
+   ========================================================= */
+
+.exchange-comparison,
+.exchange-comparison * { box-shadow: none !important; }
+
+/* Container */
+.exchange-comparison {
+  background: var(--background-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  margin: 1rem auto;
+  max-width: 820px;
+}
+
+/* Title */
+.exchange-comparison h4 {
+  text-align: center !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 0.75rem 0 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Grid: equal columns, equal heights */
+.exchange-comparison .comparison-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 56px 1fr !important;
+  gap: 1rem !important;
+  align-items: stretch !important;       /* make items equal height */
+  margin: 0 !important;
+}
+
+/* Center column becomes a vertical divider with a small badge */
+.exchange-comparison .exchange-arrow {
+  position: relative !important;
+  width: 56px !important;
+  min-height: 100% !important;
+  height: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  color: var(--text-secondary) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+/* Vertical line */
+.exchange-comparison .exchange-arrow::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 1px !important;
+  transform: translateX(-50%) !important;
+  background: var(--border-color) !important;
+}
+/* Center badge */
+.exchange-comparison .exchange-arrow::after {
+  content: "⇄" !important;
+  position: relative !important;
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+  padding: 0.25rem 0.5rem !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+  background: var(--background-surface) !important;
+  color: var(--text-secondary) !important;
+}
+/* Hide any icon inside */
+.exchange-comparison .exchange-arrow i,
+.exchange-comparison .exchange-arrow span { display: none !important; }
+
+/* Items: neutral, mirrored */
+.exchange-comparison .comparison-item {
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+  padding: 0.75rem !important;
+  text-align: left !important;
+  display: grid !important;
+  grid-template-rows: auto auto 1fr !important;
+  gap: 0.5rem !important;
+  height: 100% !important;
+}
+/* Remove colored accents to keep symmetry strict */
+.exchange-comparison .comparison-item.original,
+.exchange-comparison .comparison-item.new {
+  border-left: 1px solid var(--border-color) !important;
+}
+
+/* Section tag */
+.exchange-comparison .comparison-item h5 {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  margin: 0 !important;
+  display: inline-block !important;
+  padding: 0.125rem 0.375rem !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-xs, 4px) !important;
+  background: var(--background-surface) !important;
+}
+.exchange-comparison .comparison-item.original h5,
+.exchange-comparison .comparison-item.new h5 {
+  color: var(--text-secondary) !important;
+}
+
+/* Kill visuals to be text-first */
+.exchange-comparison .item-image,
+.exchange-comparison .item-rating { display: none !important; }
+
+/* Details */
+.exchange-comparison .item-details {
+  display: grid !important;
+  gap: 0.25rem !important;
+  align-items: start !important;
+}
+
+/* Name and price rhythm */
+.exchange-comparison .item-name {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.exchange-comparison .item-price {
+  color: var(--text-primary) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+.exchange-comparison .item-original-price {
+  color: var(--text-muted) !important;
+  font-size: 0.85rem !important;
+  margin: 0 !important;
+}
+
+/* Meta as tidy lines */
+.exchange-comparison .item-meta {
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+  line-height: 1.4 !important;
+  margin-top: 0.25rem !important;
+  white-space: pre-line !important;
+}
+
+/* Summary */
+.exchange-comparison .price-summary {
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+  padding: 0.75rem !important;
+  margin-top: 0.75rem !important;
+}
+.exchange-comparison .summary-row {
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 0.4rem 0 !important;
+  font-size: 0.9rem !important;
+  color: var(--text-secondary) !important;
+}
+.exchange-comparison .summary-row:last-child { border-bottom: 0 !important; }
+.exchange-comparison .summary-row.total {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+/* Responsive: keep divider symmetrical */
+@media (max-width: 768px) {
+  .exchange-comparison .comparison-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+  .exchange-comparison .exchange-arrow {
+    min-height: 32px !important;
+  }
+  .exchange-comparison .exchange-arrow::before {
+    height: 1px !important;
+    width: 100% !important;
+    left: 0 !important; right: 0 !important;
+    top: 50% !important; bottom: auto !important;
+    transform: translateY(-50%) !important;
+  }
+  .exchange-comparison .exchange-arrow::after {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
