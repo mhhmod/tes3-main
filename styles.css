@@ -1107,7 +1107,7 @@ a {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-xl);
     box-shadow: var(--shadow-xl);
-    z-index: var(--z-fixed);
+z-index: var(--z-fixed);
     transition: right var(--transition-medium);
     overflow: hidden;
     backdrop-filter: blur(10px);
@@ -3442,6 +3442,11 @@ textarea.form-input {
         opacity: 0;
         pointer-events: none;
     }
+}
+    background: var(--primary-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
 
 /* ===== ANIMATIONS ===== */
 @keyframes slideInLeft {
@@ -3992,14 +3997,18 @@ textarea:focus {
     }
 
     /* Cart/Sidebar improvements */
-    .floating-cart, .wishlist-panel {
-        width: 100%;
-        left: 0;
-        right: 0;
-        top: 70px;
-        height: calc(100vh - 70px);
-        border-radius: 0;
-    }
+    /* Cart/Sidebar improvements — keep drawers closed by default on mobile */
+.floating-cart, .wishlist-panel {
+  width: 100%;
+  left: 0;
+  right: -100%;          /* closed */
+  top: 70px;
+  height: calc(100vh - 70px);
+  border-radius: 0;
+}
+
+/* Open state on mobile */
+.floating-cart.open, .wishlist-panel.open { right: 0; }
 
     /* Order list improvements */
     .order-list {
