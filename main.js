@@ -2518,143 +2518,156 @@ class GrindCTRLApp {
         // Return and Exchange forms now use full customer details (no phone lookup)
 
         // Submit handlers for return and exchange forms
-        const returnForm = document.getElementById('returnForm');
-        if (returnForm) {
-            // Add order lookup functionality
-            const phoneInput = returnForm.querySelector('input[name="phone"]');
-            const emailInput = returnForm.querySelector('input[name="email"]');
-            const orderIdInput = returnForm.querySelector('input[name="orderId"]');
-            const orderListContainer = document.createElement('div');
-            orderListContainer.id = 'returnOrderList';
-            orderListContainer.className = 'order-list';
-            orderListContainer.style.display = 'none';
+       const returnForm = document.getElementById('returnForm');
+if (returnForm) {
+    // Inputs
+    const phoneInput = returnForm.querySelector('input[name="phone"]');
+    const emailInput = returnForm.querySelector('input[name="email"]');
+    const orderIdInput = returnForm.querySelector('input[name="orderId"]');
 
-            // Insert order list after the order ID field
-            if (orderIdInput) {
-                orderIdInput.parentNode.appendChild(orderListContainer);
+    // Dynamic order list container
+    const orderListContainer = document.createElement('div');
+    orderListContainer.id = 'returnOrderList';
+    orderListContainer.className = 'order-list';
+    orderListContainer.style.display = 'none';
+
+    // Submit button reference
+    const returnSubmitBtn = returnForm.querySelector('button[type="submit"]');
+    if (returnSubmitBtn) returnSubmitBtn.textContent = 'Submit Return Request';
+
+    // Mount list after Order ID field
+    if (orderIdInput) {
+        orderIdInput.parentNode.appendChild(orderListContainer);
+
+        // Keep orderId in sync when user clicks a list item
+        orderListContainer.addEventListener('click', () => {
+            if (orderIdInput && typeof orderListContainer.getSelectedOrderId === 'function') {
+                const selId = orderListContainer.getSelectedOrderId();
+                if (selId) {
+                    orderIdInput.value = selId;
+                    if (returnSubmitBtn) returnSubmitBtn.textContent = `Submit Return for Order ${selId}`;
+                }
             }
+        });
+    }
 
-            const updateOrderList = () => {
-                const phone = phoneInput?.value.trim();
-                const email = emailInput?.value.trim();
+    // Render or hide the order list based on phone/email
+    const updateOrderList = () => {
+        const phone = phoneInput?.value.trim();
+        const email = emailInput?.value.trim();
 
-                if (phone || email) {
-                    const orders = getOrdersByPhoneOrEmail(phone, email);
-                    if (orders.length > 0) {
-                        populateOrderSelect(orderListContainer, orders, step2ContinueBtn);
-                        orderListContainer.style.display = 'block';
+        if (phone || email) {
+            const orders = getOrdersByPhoneOrEmail(phone, email);
+            if (orders.length > 0) {
+                // Reuse shared renderer; pass the submit button so it enables on select
+                populateOrderSelect(orderListContainer, orders, returnSubmitBtn);
+                orderListContainer.style.display = 'block';
 
-                        // Pre-fill order ID if only one order found
-                        if (orders.length === 1 && orderIdInput) {
-                            orderIdInput.value = orders[0]['Order ID'];
-                            // Auto-select the radio button
-                            const radio = orderListContainer.querySelector('input[type="radio"]');
-                            if (radio) {
-                                radio.checked = true;
-                                step2ContinueBtn.disabled = false;
-                                radio.closest('.order-item').classList.add('selected');
-                            }
-                        }
-                    } else {
-                        orderListContainer.style.display = 'none';
-                        step2ContinueBtn.disabled = true;
-                    }
-                } else {
-                    orderListContainer.style.display = 'none';
-                    step2ContinueBtn.disabled = true;
-                }
-            };
-
-            phoneInput?.addEventListener('input', updateOrderList);
-            emailInput?.addEventListener('input', updateOrderList);
-
-            returnForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const formData = new FormData(returnForm);
-                const returnData = {};
-
-                // Collect form data
-                for (let [key, value] of formData.entries()) {
-                    returnData[key] = value;
-                }
-
-                // Validate required fields
-                if (!returnData.phone || !returnData.email || !returnData.firstName ||
-                    !returnData.lastName || !returnData.address || !returnData.city ||
-                    !returnData.returnReason) {
-                    this.notifications.error('Please fill in all required fields.');
-                    return;
-                }
-
-                // Validate email format
-                if (!Utils.validateEmail(returnData.email)) {
-                    this.notifications.error('Please enter a valid email address.');
-                    return;
-                }
-
-                // Find selected order if available
-                let selectedOrder = null;
-                if (returnData.orderId) {
-                    const orders = getOrdersByPhoneOrEmail(returnData.phone, returnData.email);
-                    selectedOrder = orders.find(o => o['Order ID'] === returnData.orderId);
-                }
-
-                // Calculate refund amount and payment method
-                let refundAmount = "0.00";
-                let paymentMethod = "Return Request";
-                let originalPaymentMethod = "Unknown";
-
-                if (selectedOrder) {
-                    // If original order was COD, customer will get refund
-                    if (selectedOrder['Payment Method'] === 'Cash on Delivery') {
-                        refundAmount = selectedOrder['Total'] || selectedOrder['COD Amount'] || "0.00";
-                        paymentMethod = "Refund to Customer";
-                        originalPaymentMethod = selectedOrder['Payment Method'];
+                // Auto-select when only one order matches
+                if (orders.length === 1 && orderIdInput) {
+                    orderIdInput.value = orders[0]['Order ID'];
+                    const radio = orderListContainer.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                        if (returnSubmitBtn) returnSubmitBtn.disabled = false;
+                        radio.closest('.order-item').classList.add('selected');
                     }
                 }
-
-                // Create return payload similar to order data with clear refund information
-                const returnPayload = {
-                    "Order ID": returnData.orderId || Utils.generateOrderId(),
-                    "Customer Name": `${returnData.firstName} ${returnData.lastName}`,
-                    "Customer Email": returnData.email,
-                    "Phone": returnData.phone,
-                    "City": returnData.city,
-                    "Address": returnData.address,
-                    "Note": `Return Reason: ${returnData.returnReason}${selectedOrder ? ` | Original Order: ${selectedOrder['Order ID']} | Original Payment: ${originalPaymentMethod} | Refund Amount: ${refundAmount} EGP | Refund Method: Customer will be contacted for refund arrangement` : ''}`,
-                    "COD Amount": refundAmount,
-                    "Tracking Number": "",
-                    "Courier": "",
-                    "Total": refundAmount,
-                    "Date": new Date().toISOString(),
-                    "Status": "Return",
-                    "Payment Method": paymentMethod,
-                    "Product": selectedOrder ? selectedOrder['Product'] : "Return Request",
-                    "Quantity": selectedOrder ? selectedOrder['Quantity'] : "1",
-                    "requestType": "return",
-                    "returnDetails": {
-                        "returnReason": returnData.returnReason,
-                        "originalOrderId": returnData.orderId || null,
-                        "originalOrder": selectedOrder || null,
-                        "refundAmount": refundAmount,
-                        "refundMethod": paymentMethod,
-                        "originalPaymentMethod": originalPaymentMethod
-                    }
-                };
-
-                const success = await this.sendReturnOrExchangeWebhook(returnPayload, 'return');
-                if (success) {
-                    this.notifications.success('Return request submitted! Our support team will contact you soon regarding the refund.');
-                } else {
-                    this.notifications.error('Failed to submit return request. Please try again.');
-                }
-
-                returnForm.reset();
+            } else {
                 orderListContainer.style.display = 'none';
-                this.closeModal('return');
-            });
+                if (returnSubmitBtn) returnSubmitBtn.disabled = true;
+            }
+        } else {
+            orderListContainer.style.display = 'none';
+            if (returnSubmitBtn) returnSubmitBtn.disabled = true;
         }
+    };
+
+    phoneInput?.addEventListener('input', updateOrderList);
+    emailInput?.addEventListener('input', updateOrderList);
+
+    // Submit handler
+    returnForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(returnForm);
+        const returnData = {};
+        for (let [k, v] of formData.entries()) returnData[k] = v;
+
+        // Required fields
+        if (!returnData.phone || !returnData.email || !returnData.firstName ||
+            !returnData.lastName || !returnData.address || !returnData.city ||
+            !returnData.returnReason) {
+            this.notifications.error('Please fill in all required fields.');
+            return;
+        }
+        if (!Utils.validateEmail(returnData.email)) {
+            this.notifications.error('Please enter a valid email address.');
+            return;
+        }
+
+        // If there are matched orders, force selection
+        const matchedOrders = getOrdersByPhoneOrEmail(returnData.phone, returnData.email);
+        if (matchedOrders.length > 0 && !returnData.orderId) {
+            this.notifications.error('Select the order to return from the list.');
+            return;
+        }
+
+        // Derive original order context if provided
+        let selectedOrder = null;
+        if (returnData.orderId) {
+            const orders = getOrdersByPhoneOrEmail(returnData.phone, returnData.email);
+            selectedOrder = orders.find(o => o['Order ID'] === returnData.orderId) || null;
+        }
+
+        // Refund heuristics
+        let refundAmount = "0.00";
+        let paymentMethod = "Return Request";
+        let originalPaymentMethod = "Unknown";
+        if (selectedOrder && selectedOrder['Payment Method'] === 'Cash on Delivery') {
+            refundAmount = selectedOrder['Total'] || selectedOrder['COD Amount'] || "0.00";
+            paymentMethod = "Refund to Customer";
+            originalPaymentMethod = selectedOrder['Payment Method'];
+        }
+
+        // Payload
+        const returnPayload = {
+            "Order ID": returnData.orderId || Utils.generateOrderId(),
+            "Customer Name": `${returnData.firstName} ${returnData.lastName}`,
+            "Customer Email": returnData.email,
+            "Phone": returnData.phone,
+            "City": returnData.city,
+            "Address": returnData.address,
+            "Note": `Return Reason: ${returnData.returnReason}${selectedOrder ? ` | Original Order: ${selectedOrder['Order ID']} | Original Payment: ${originalPaymentMethod} | Refund Amount: ${refundAmount} EGP | Refund Method: Customer will be contacted for refund arrangement` : ''}`,
+            "COD Amount": refundAmount,
+            "Tracking Number": "",
+            "Courier": "",
+            "Total": refundAmount,
+            "Date": new Date().toISOString(),
+            "Status": "Return",
+            "Payment Method": paymentMethod,
+            "Product": selectedOrder ? selectedOrder['Product'] : "Return Request",
+            "Quantity": selectedOrder ? selectedOrder['Quantity'] : "1",
+            "requestType": "return",
+            "returnDetails": {
+                "returnReason": returnData.returnReason,
+                "originalOrderId": returnData.orderId || null,
+                "originalOrder": selectedOrder || null,
+                "refundAmount": refundAmount,
+                "originalPaymentMethod": originalPaymentMethod
+            }
+        };
+
+        const ok = await this.sendReturnOrExchangeWebhook(returnPayload, 'return');
+        if (ok) this.notifications.success('Return request submitted. Our support team will contact you soon regarding the refund.');
+        else this.notifications.error('Failed to submit return request. Please try again.');
+
+        returnForm.reset();
+        orderListContainer.style.display = 'none';
+        this.closeModal('return');
+    });
+}
+
         const exchangeForm = document.getElementById('exchangeForm');
         if (exchangeForm) {
             // 3-Step Exchange Process
