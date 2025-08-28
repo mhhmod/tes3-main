@@ -1795,7 +1795,7 @@ a {
     flex-direction: column;
     gap: var(--spacing-xl);
     height: 100%;
-    overflow: hidden;
+    overflow: visible; /* let parent (.checkout-modal) handle scroll */
 }
 
 .checkout-form {
@@ -3886,10 +3886,13 @@ textarea:focus {
         gap: var(--spacing-lg);
     }
 
-    .checkout-modal {
-        width: 98%;
-        max-height: 95vh;
-    }
+   .checkout-modal {
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow-y: auto;            /* allow vertical scroll */
+    -webkit-overflow-scrolling: touch; /* smooth on iOS */
+}
+
 
     .checkout-form {
         order: 2;
