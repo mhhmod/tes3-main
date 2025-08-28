@@ -24,6 +24,7 @@ class AppState {
         };
         this.checkoutStep = 1;
         this.orderData = null;
+        this.orders = this.loadFromStorage('grindctrl_orders') || [];
     }
 
     // Persistent storage methods
@@ -31,7 +32,18 @@ class AppState {
         try {
             localStorage.setItem(key, JSON.stringify(data));
         } catch (error) {
-            console.warn('Failed to save to localStorage:', error);
+            console.error(`Failed to save ${key} to storage:`, error);
+        }
+    }
+
+    storeOrder(orderData) {
+        try {
+            const orders = this.loadFromStorage('grindctrl_orders') || [];
+            orders.push(orderData);
+            this.saveToStorage('grindctrl_orders', orders);
+            this.orders = orders;
+        } catch (error) {
+            console.error('Failed to store order:', error);
         }
     }
 
@@ -1645,7 +1657,7 @@ class GrindCTRLApp {
 
             if (success) {
                 // Persist this order in localStorage so customers can look it up by phone
-                this.storeOrder(orderData);
+                this.state.storeOrder(orderData);
                 this.showOrderSuccess(orderData);
                 this.state.clearCart();
                 this.closeModal('checkout');
