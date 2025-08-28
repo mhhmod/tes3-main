@@ -2163,6 +2163,102 @@ class GrindCTRLApp {
         `;
     }
 
+    renderExchangeComparison(oldOrder, newProduct, priceDelta) {
+        const comparisonContainer = document.getElementById('exchangeProductPreview');
+        if (!comparisonContainer) return;
+
+        const deltaClass = priceDelta > 0 ? 'price-increase' : priceDelta < 0 ? 'price-decrease' : 'price-same';
+        
+        comparisonContainer.innerHTML = `
+            <div class="exchange-comparison">
+                <h4>Exchange Comparison</h4>
+                
+                <div class="comparison-grid">
+                    <!-- Original Product -->
+                    <div class="comparison-item original">
+                        <h5><i class="fas fa-arrow-left"></i> Your Current Item</h5>
+                        <div class="item-details">
+                            <div class="item-name">${oldOrder.Product}</div>
+                            <div class="item-price">${parseFloat(oldOrder.Total).toFixed(2)} EGP</div>
+                            <div class="item-meta">
+                                <small>Order: ${oldOrder['Order ID']}</small><br>
+                                <small>Date: ${new Date(oldOrder.Date).toLocaleDateString()}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Exchange Arrow -->
+                    <div class="exchange-arrow">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Exchange</span>
+                    </div>
+                    
+                    <!-- New Product -->
+                    <div class="comparison-item new">
+                        <h5>New Item <i class="fas fa-arrow-right"></i></h5>
+                        <div class="item-details">
+                            <img src="${newProduct.images[0]}" alt="${newProduct.name}" class="item-image">
+                            <div class="item-info">
+                                <div class="item-name">${newProduct.name}</div>
+                                <div class="item-price">${newProduct.price.toFixed(2)} EGP</div>
+                                ${newProduct.originalPrice ? `
+                                    <div class="item-original-price">${newProduct.originalPrice.toFixed(2)} EGP</div>
+                                ` : ''}
+                                ${newProduct.rating ? `
+                                    <div class="item-rating">
+                                        ${this.generateStars(newProduct.rating)} (${newProduct.reviewCount || 0})
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price Summary -->
+                <div class="price-summary ${deltaClass}">
+                    <div class="summary-row">
+                        <span>Original Item Value:</span>
+                        <span>${parseFloat(oldOrder.Total).toFixed(2)} EGP</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>New Item Price:</span>
+                        <span>${newProduct.price.toFixed(2)} EGP</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Price Difference:</span>
+                        <span class="${deltaClass}">
+                            ${priceDelta >= 0 ? '+' : ''}${priceDelta.toFixed(2)} EGP
+                            ${priceDelta > 0 ? ' (You Pay)' : priceDelta < 0 ? ' (You Get Refund)' : ' (No Change)'}
+                        </span>
+                    </div>
+                </div>
+                
+                ${newProduct.colors && newProduct.colors.length > 0 ? `
+                    <div class="product-options">
+                        <h5>Available Colors:</h5>
+                        <div class="color-options">
+                            ${newProduct.colors.slice(0, 5).map(color => `
+                                <div class="color-swatch" 
+                                     style="background-color: ${color.value}"
+                                     title="${color.name}"></div>
+                            `).join('')}
+                            ${newProduct.colors.length > 5 ? `<span class="more-colors">+${newProduct.colors.length - 5} more</span>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${newProduct.sizes && newProduct.sizes.length > 0 ? `
+                    <div class="product-options">
+                        <h5>Available Sizes:</h5>
+                        <div class="size-options">
+                            ${newProduct.sizes.map(size => `<span class="size-badge">${size}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
     changeExchangePreviewImage(imageSrc, thumbnailElement) {
         const mainImage = document.getElementById('exchangePreviewMainImage');
         const thumbnails = document.querySelectorAll('#exchangePreviewThumbnails img');
@@ -2673,6 +2769,9 @@ class GrindCTRLApp {
                 currentStep = 3;
                 exchangeSubmitBtn.style.display = 'block';
 
+                // Create product selection grid
+                createProductSelectionGrid();
+
                 // Scroll to item selection
                 itemSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -2702,73 +2801,165 @@ class GrindCTRLApp {
                 }
             };
 
-            // Handle item selection and price calculation
-            const newItemSelect = document.getElementById('exchangeNewItem');
+            // Handle item selection with visual product cards instead of dropdown
+            let selectedNewProduct = null;
             const priceDeltaDiv = document.getElementById('priceDelta');
             const deltaAmountSpan = document.getElementById('deltaAmount');
             const deltaExplanation = document.getElementById('deltaExplanation');
             const productPreview = document.getElementById('exchangeProductPreview');
+            
+            // Create visual product selection grid
+            const createProductSelectionGrid = () => {
+                const productGridContainer = document.getElementById('exchangeProductGrid');
+                if (!productGridContainer || !this.state.products.length) return;
+
+                productGridContainer.innerHTML = `
+                    <h4>Select New Product</h4>
+                    <div class="exchange-product-grid">
+                        ${this.state.products.map(product => `
+                            <div class="exchange-product-card" data-product-id="${product.id}">
+                                <div class="product-image-container">
+                                    <img src="${product.images[0]}" alt="${product.name}" class="product-image" loading="lazy">
+                                    ${product.originalPrice ? `
+                                        <div class="discount-badge">
+                                            ${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="product-info">
+                                    <h5 class="product-name">${product.name}</h5>
+                                    <div class="product-price">
+                                        <span class="current-price">${product.price.toFixed(2)} EGP</span>
+                                        ${product.originalPrice ? `
+                                            <span class="original-price">${product.originalPrice.toFixed(2)} EGP</span>
+                                        ` : ''}
+                                    </div>
+                                    ${product.rating ? `
+                                        <div class="product-rating">
+                                            <div class="stars">${this.generateStars(product.rating)}</div>
+                                            <span class="rating-text">(${product.reviewCount || 0})</span>
+                                        </div>
+                                    ` : ''}
+                                    <div class="product-select-indicator">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Click to select</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Add click handlers to product cards
+                const productCards = productGridContainer.querySelectorAll('.exchange-product-card');
+                productCards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        const productId = this.getAttribute('data-product-id');
+                        const product = app.state.products.find(p => p.id === productId);
+                        
+                        if (product) {
+                            // Remove selection from all cards
+                            productCards.forEach(c => c.classList.remove('selected'));
+                            // Add selection to clicked card
+                            this.classList.add('selected');
+                            
+                            // Update selected product
+                            selectedNewProduct = product;
+                            
+                            // Update price calculation
+                            updatePriceCalculation();
+                            
+                            // Scroll to price comparison section
+                            setTimeout(() => {
+                                priceDeltaDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+                        }
+                    });
+                    
+                    // Add hover effects
+                    card.addEventListener('mouseenter', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'translateY(-2px)';
+                            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                        }
+                    });
+                    
+                    card.addEventListener('mouseleave', function() {
+                        if (!this.classList.contains('selected')) {
+                            this.style.transform = 'translateY(0)';
+                            this.style.boxShadow = '';
+                        }
+                    });
+                });
+            };
 
             const updatePriceCalculation = () => {
-                const newItemId = newItemSelect?.value;
-
-                if (newItemId && selectedOrder) {
-                    const newProduct = this.state.products.find(p => p.id === newItemId);
+                if (selectedNewProduct && selectedOrder) {
                     const oldProductPrice = selectedOrder ? parseFloat(selectedOrder['Total']) || 0 : 0;
+                    const newPrice = selectedNewProduct.price || 0;
+                    const delta = newPrice - oldProductPrice;
+                    const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
 
-                    if (newProduct) {
-                        const newPrice = newProduct.price || 0;
-                        const delta = newPrice - oldProductPrice;
-                        const deltaText = delta >= 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
+                    priceDeltaDiv.style.display = 'block';
+                    deltaAmountSpan.textContent = `${deltaText} EGP`;
+                    deltaAmountSpan.className = delta >= 0 ? 'positive' : 'negative';
 
-                        priceDeltaDiv.style.display = 'block';
-                        deltaAmountSpan.textContent = `${deltaText} EGP`;
-                        deltaAmountSpan.className = delta >= 0 ? 'positive' : 'negative';
-
-                        // Show clear explanation
-                        if (delta > 0) {
-                            deltaExplanation.innerHTML = `
-                                <div class="explanation-item">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span>You will need to pay <strong>${delta.toFixed(2)} EGP additional</strong> for this exchange</span>
+                    // Show clear explanation with enhanced styling
+                    if (delta > 0) {
+                        deltaExplanation.innerHTML = `
+                            <div class="explanation-item payment-required">
+                                <i class="fas fa-credit-card"></i>
+                                <div>
+                                    <strong>Additional Payment Required</strong>
+                                    <p>You will need to pay <strong>${delta.toFixed(2)} EGP extra</strong> for this exchange</p>
                                 </div>
-                                <div class="explanation-item">
-                                    <i class="fas fa-truck"></i>
-                                    <span>Payment will be collected when the new item is delivered</span>
+                            </div>
+                            <div class="explanation-item delivery-info">
+                                <i class="fas fa-truck"></i>
+                                <div>
+                                    <strong>Payment on Delivery</strong>
+                                    <p>Payment will be collected when the new item is delivered</p>
                                 </div>
-                            `;
-                        } else if (delta < 0) {
-                            const refundAmount = Math.abs(delta);
-                            deltaExplanation.innerHTML = `
-                                <div class="explanation-item">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                    <span>You will receive a <strong>${refundAmount.toFixed(2)} EGP refund</strong></span>
+                            </div>
+                        `;
+                    } else if (delta < 0) {
+                        const refundAmount = Math.abs(delta);
+                        deltaExplanation.innerHTML = `
+                            <div class="explanation-item refund-info">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <div>
+                                    <strong>Refund Due</strong>
+                                    <p>You will receive a <strong>${refundAmount.toFixed(2)} EGP refund</strong></p>
                                 </div>
-                                <div class="explanation-item">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Refund will be processed after the exchange is completed</span>
+                            </div>
+                            <div class="explanation-item processing-info">
+                                <i class="fas fa-clock"></i>
+                                <div>
+                                    <strong>Refund Processing</strong>
+                                    <p>Refund will be processed after the exchange is completed</p>
                                 </div>
-                            `;
-                        } else {
-                            deltaExplanation.innerHTML = `
-                                <div class="explanation-item">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span><strong>No additional payment required</strong> - same price exchange</span>
+                            </div>
+                        `;
+                    } else {
+                        deltaExplanation.innerHTML = `
+                            <div class="explanation-item same-price">
+                                <i class="fas fa-check-circle"></i>
+                                <div>
+                                    <strong>Perfect Match!</strong>
+                                    <p><strong>No additional payment required</strong> - same price exchange</p>
                                 </div>
-                            `;
-                        }
-
-                        // Show product preview
-                        this.renderExchangeProductPreview(newProduct);
-                        productPreview.style.display = 'block';
+                            </div>
+                        `;
                     }
+
+                    // Show detailed product comparison
+                    this.renderExchangeComparison(selectedOrder, selectedNewProduct, delta);
+                    productPreview.style.display = 'block';
                 } else {
                     priceDeltaDiv.style.display = 'none';
                     productPreview.style.display = 'none';
                 }
             };
-
-            newItemSelect?.addEventListener('change', updatePriceCalculation);
 
             // Insert continue buttons (they were already created earlier)
             const firstFormSection = exchangeForm.querySelector('.form-section:first-child');
@@ -2815,19 +3006,14 @@ class GrindCTRLApp {
                 e.preventDefault();
 
                 const customerData = validateStep1();
-                const newItemId = document.getElementById('exchangeNewItem')?.value;
                 const note = exchangeForm.querySelector('textarea[name="note"]')?.value || '';
 
-                if (!customerData || !selectedOrder || !newItemId) {
-                    this.notifications.error('Please complete all steps.');
+                if (!customerData || !selectedOrder || !selectedNewProduct) {
+                    this.notifications.error('Please complete all steps and select a new product.');
                     return;
                 }
 
-                const newProduct = this.state.products.find(p => p.id === newItemId);
-                if (!newProduct) {
-                    this.notifications.error('Selected item not found.');
-                    return;
-                }
+                const newProduct = selectedNewProduct;
 
                 const oldPrice = parseFloat(selectedOrder['Total']) || 0;
                 const newPrice = newProduct.price || 0;
@@ -2912,10 +3098,13 @@ class GrindCTRLApp {
                 productPreview.style.display = 'none';
                 document.getElementById('exchangeSummary').style.display = 'none';
                 exchangeOrderList.innerHTML = '';
+                const productGrid = document.getElementById('exchangeProductGrid');
+                if (productGrid) productGrid.innerHTML = '';
                 step1ContinueBtn.style.display = 'block';
                 step2ContinueBtn.style.display = 'none';
                 currentStep = 1;
                 selectedOrder = null;
+                selectedNewProduct = null;
                 this.closeModal('exchange');
             });
         }
