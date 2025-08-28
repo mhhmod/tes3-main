@@ -2339,42 +2339,16 @@ class GrindCTRLApp {
                 return;
             }
 
-            // Remove any existing event listeners by cloning the container
-            const newContainer = container.cloneNode(false);
-            container.parentNode.replaceChild(newContainer, container);
-            container = newContainer;
+            let selectedOrderId = null;
 
-            // Create order selection with better information display
+            // Create order selection with clickable buttons
             orders.forEach(order => {
                 const item = document.createElement('div');
-                item.className = 'order-item';
-
-                const radio = document.createElement('input');
-                radio.type = 'radio';
-                radio.name = `${container.id}_radio`;
-                radio.value = order['Order ID'];
-                radio.id = `order_${order['Order ID'].replace(/[^a-zA-Z0-9]/g, '_')}`; // Sanitize ID
-
-                // Add direct event listener to each radio button
-                radio.addEventListener('change', function() {
-                    if (this.checked) {
-                        // Enable the submit button
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            console.log('Radio selected, enabling button:', submitBtn);
-                        }
-                        // Remove selected class from all items
-                        container.querySelectorAll('.order-item').forEach(item => {
-                            item.classList.remove('selected');
-                        });
-                        // Add selected class to the selected item
-                        this.closest('.order-item').classList.add('selected');
-                    }
-                });
-
-                const label = document.createElement('label');
-                label.setAttribute('for', radio.id);
-                label.innerHTML = `
+                item.className = 'order-item clickable-order-item';
+                item.setAttribute('data-order-id', order['Order ID']);
+                
+                // Make the entire item clickable
+                item.innerHTML = `
                     <div class="order-header">
                         <strong>${order['Order ID']}</strong>
                         <span class="order-price">${order.Total} EGP</span>
@@ -2384,15 +2358,57 @@ class GrindCTRLApp {
                         <small>Date: ${new Date(order.Date).toLocaleDateString()}</small><br>
                         <small>Status: ${order.Status}</small>
                     </div>
+                    <div class="order-select-indicator">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Click to select this order</span>
+                    </div>
                 `;
 
-                item.appendChild(radio);
-                item.appendChild(label);
+                // Add click event listener to the entire item
+                item.addEventListener('click', function() {
+                    // Remove selected class from all items
+                    container.querySelectorAll('.order-item').forEach(orderItem => {
+                        orderItem.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to clicked item
+                    this.classList.add('selected');
+                    
+                    // Store selected order ID
+                    selectedOrderId = order['Order ID'];
+                    
+                    // Enable the continue button
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = `Continue with Order ${order['Order ID']}`;
+                        console.log('Order selected:', order['Order ID'], 'Button enabled:', submitBtn);
+                    }
+                });
+
+                // Add hover effect
+                item.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('selected')) {
+                        this.style.backgroundColor = 'var(--background-surface)';
+                    }
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('selected')) {
+                        this.style.backgroundColor = '';
+                    }
+                });
+
                 container.appendChild(item);
             });
 
+            // Store a reference to get selected order
+            container.getSelectedOrderId = () => selectedOrderId;
+
             container.style.display = 'block';
-            if (submitBtn) submitBtn.disabled = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Continue to Item Selection';
+            }
         };
 
         /**
@@ -2637,11 +2653,10 @@ class GrindCTRLApp {
 
                     // Auto-select first order for better UX
                     if (orders.length === 1) {
-                        const firstRadio = updatedContainer.querySelector('input[type="radio"]');
-                        if (firstRadio) {
-                            firstRadio.checked = true;
-                            // Trigger change event to enable button
-                            firstRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                        const firstOrderItem = updatedContainer.querySelector('.order-item');
+                        if (firstOrderItem) {
+                            // Automatically click the first order item
+                            firstOrderItem.click();
                         }
                     }
                 } else {
@@ -2775,7 +2790,9 @@ class GrindCTRLApp {
 
             // Step 2 Continue Handler
             step2ContinueBtn.addEventListener('click', () => {
-                const selectedOrderId = document.querySelector('#exchangeOrderList input[type="radio"]:checked')?.value;
+                const exchangeOrderList = document.getElementById('exchangeOrderList');
+                const selectedOrderId = exchangeOrderList.getSelectedOrderId ? exchangeOrderList.getSelectedOrderId() : null;
+                
                 if (!selectedOrderId) {
                     this.notifications.error('Please select an order to exchange from.');
                     return;
@@ -2788,6 +2805,8 @@ class GrindCTRLApp {
                 if (order) {
                     showItemSelection(order);
                     step2ContinueBtn.style.display = 'none';
+                } else {
+                    this.notifications.error('Selected order not found. Please try again.');
                 }
             });
 
