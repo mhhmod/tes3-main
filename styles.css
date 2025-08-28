@@ -5334,3 +5334,175 @@ textarea:focus {
    End Ultra Minimal Override
    =============================== */
 
+
+/* =========================================================
+   Exchange Comparison — Text‑First Pro Override (2025‑08‑28)
+   Goal: pure text layout, elegant alignment, no graphics.
+   Uses high specificity + !important to defeat prior styles.
+   ========================================================= */
+
+.exchange-comparison,
+.exchange-comparison * {
+  box-shadow: none !important;
+}
+
+/* Container */
+.exchange-comparison {
+  background: var(--background-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  margin: 1rem auto;
+  max-width: 820px;
+}
+
+/* Title */
+.exchange-comparison h4 {
+  text-align: left !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  margin: 0 0 0.75rem 0 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Grid */
+.exchange-comparison .comparison-grid {
+  display: grid !important;
+  grid-template-columns: 1fr minmax(32px, 48px) 1fr !important;
+  align-items: start !important;
+  gap: 1rem !important;
+  margin: 0 !important;
+}
+
+/* Center arrow becomes just a glyph */
+.exchange-comparison .exchange-arrow {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--text-secondary) !important;
+  margin: 0.5rem auto !important;
+}
+.exchange-comparison .exchange-arrow::before {
+  content: "→" !important;
+  font-size: 1rem !important;
+  line-height: 1 !important;
+}
+.exchange-comparison .exchange-arrow i { display: none !important; }
+
+/* Items as plain text panes */
+.exchange-comparison .comparison-item {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+/* Thin neutral divider under each item */
+.exchange-comparison .comparison-item + .comparison-item {
+  border-top: 0 !important;
+}
+
+/* Subhead */
+.exchange-comparison .comparison-item h5 {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  margin: 0 0 0.5rem 0 !important;
+  opacity: 1 !important;
+}
+.exchange-comparison .comparison-item.original h5,
+.exchange-comparison .comparison-item.new h5 {
+  color: var(--text-secondary) !important;
+}
+
+/* Collapse visuals */
+.exchange-comparison .item-image { display: none !important; }
+.exchange-comparison .item-rating { display: none !important; }
+
+/* Details stack */
+.exchange-comparison .item-details {
+  gap: 0.25rem !important;
+  align-items: stretch !important;
+}
+
+/* Name */
+.exchange-comparison .item-name {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  -webkit-line-clamp: 2;
+}
+
+/* Price group */
+.exchange-comparison .item-price {
+  color: var(--text-primary) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  margin: 0.1rem 0 0 0 !important;
+}
+.exchange-comparison .item-original-price {
+  color: var(--text-muted) !important;
+  font-size: 0.85rem !important;
+  margin: 0.1rem 0 0 0 !important;
+}
+
+/* Meta as tidy list */
+.exchange-comparison .item-meta {
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+  line-height: 1.4 !important;
+  margin-top: 0.25rem !important;
+  white-space: pre-line; /* preserve line breaks if any */
+}
+
+/* Summary minimal */
+.exchange-comparison .price-summary {
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+  padding: 0.75rem !important;
+  margin-top: 0.75rem !important;
+}
+.exchange-comparison .summary-row {
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 0.4rem 0 !important;
+  font-size: 0.9rem !important;
+  color: var(--text-secondary) !important;
+}
+.exchange-comparison .summary-row:last-child { border-bottom: 0 !important; }
+.exchange-comparison .summary-row.total {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+/* Kill color-coded backgrounds */
+.exchange-comparison .price-summary.price-increase,
+.exchange-comparison .price-summary.price-decrease,
+.exchange-comparison .price-summary.price-same {
+  background: transparent !important;
+  border-left: 0 !important;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .exchange-comparison { padding: 0.75rem !important; }
+  .exchange-comparison .comparison-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+  .exchange-comparison .exchange-arrow { margin: 0.25rem 0 !important; }
+  .exchange-comparison .item-name { font-size: 0.9rem !important; }
+}
+
