@@ -3165,3 +3165,132 @@ document.addEventListener('keydown', function(e){
     try { window.app && app.closeAllModals && app.closeAllModals(); } catch(_){}
   }
 });
+
+// ===== EXCHANGE COMPARISON FUNCTIONALITY =====
+GrindCTRLApp.prototype.openExchangeModal = function() {
+    this.openModal('exchange');
+    this.initializeExchangeComparison();
+};
+
+GrindCTRLApp.prototype.initializeExchangeComparison = function() {
+    // Initialize the exchange comparison interface
+    this.setupExchangeHandlers();
+};
+
+GrindCTRLApp.prototype.setupExchangeHandlers = function() {
+    // Handle size option selection in new item section
+    const sizeOptions = document.querySelectorAll('.exchange-comparison-modal .size-option');
+    sizeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Remove selected class from siblings
+            option.parentNode.querySelectorAll('.size-option').forEach(s => s.classList.remove('selected'));
+            // Add selected class to clicked option
+            option.classList.add('selected');
+            this.updateExchangePricing();
+        });
+    });
+
+    // Handle color option selection in new item section
+    const colorOptions = document.querySelectorAll('.exchange-comparison-modal .color-dot');
+    colorOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Remove selected class from siblings
+            option.parentNode.querySelectorAll('.color-dot').forEach(c => c.classList.remove('selected'));
+            // Add selected class to clicked option
+            option.classList.add('selected');
+            this.updateExchangePricing();
+        });
+    });
+};
+
+GrindCTRLApp.prototype.updateExchangePricing = function() {
+    // Update the price summary based on selected options
+    const currentPrice = 300.00;
+    const newPrice = 650.00;
+    const difference = newPrice - currentPrice;
+
+    const summaryValue = document.querySelector('.summary-row.total .summary-value');
+    if (summaryValue) {
+        // Update visual feedback
+        if (difference > 0) {
+            summaryValue.classList.add('positive');
+            summaryValue.classList.remove('negative');
+        } else if (difference < 0) {
+            summaryValue.classList.add('negative');
+            summaryValue.classList.remove('positive');
+        }
+    }
+};
+
+GrindCTRLApp.prototype.proceedWithExchange = function() {
+    // Show loading state
+    const confirmBtn = document.querySelector('.exchange-actions .btn-primary');
+    if (!confirmBtn) return;
+    
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    confirmBtn.disabled = true;
+
+    // Simulate exchange processing
+    setTimeout(() => {
+        // Reset button
+        confirmBtn.innerHTML = originalText;
+        confirmBtn.disabled = false;
+        
+        // Close exchange modal
+        this.closeModal('exchange');
+        
+        // Show success notification
+        this.notifications.success(
+            'Exchange request submitted! We will contact you within 24 hours to arrange the exchange.'
+        );
+        
+        // Show order confirmation modal with exchange details
+        this.showExchangeConfirmation();
+    }, 2000);
+};
+
+GrindCTRLApp.prototype.showExchangeConfirmation = function() {
+    // Create and show a confirmation modal with exchange details
+    const modal = document.createElement('div');
+    modal.className = 'modal open';
+    modal.innerHTML = `
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Exchange Confirmed</h3>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Exchange Request Submitted</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                    Your exchange request has been successfully submitted. Our team will review your request and contact you within 24 hours to arrange the product exchange.
+                </p>
+                <div style="background: var(--background-card); padding: 1rem; border-radius: var(--border-radius-lg); margin-bottom: 1.5rem; text-align: left;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">Exchange Details:</h4>
+                    <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>From:</strong> Luxury Cropped Black T-Shirt - XS</p>
+                    <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>To:</strong> Oversized Essential Hoodie - M</p>
+                    <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Additional Payment:</strong> +350.00 EGP</p>
+                    <p style="margin: 0.25rem 0; font-size: 0.9rem;"><strong>Reference:</strong> EX${Date.now()}</p>
+                </div>
+                <button class="btn btn-primary" onclick="this.closest('.modal').remove()" style="min-width: 150px;">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (modal.parentNode) {
+            modal.remove();
+        }
+    }, 10000);
+};
