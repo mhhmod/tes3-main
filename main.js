@@ -2589,7 +2589,7 @@ if (returnForm) {
     // Submit handler
     returnForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+ 
         const formData = new FormData(returnForm);
         const returnData = {};
         for (let [k, v] of formData.entries()) returnData[k] = v;
@@ -2621,14 +2621,17 @@ if (returnForm) {
         }
 
         // Refund heuristics
-        let refundAmount = "0.00";
-        let paymentMethod = "Return Request";
-        let originalPaymentMethod = "Unknown";
-        if (selectedOrder && selectedOrder['Payment Method'] === 'Cash on Delivery') {
-            refundAmount = selectedOrder['Total'] || selectedOrder['COD Amount'] || "0.00";
-            paymentMethod = "Refund to Customer";
-            originalPaymentMethod = selectedOrder['Payment Method'];
-        }
+      // Refund = original order price
+let refundAmount = "0.00";
+let paymentMethod = "Refund to Customer";
+let originalPaymentMethod = "Unknown";
+
+if (selectedOrder) {
+  const rawTotal = parseFloat(selectedOrder['Total'] || selectedOrder['COD Amount'] || "0");
+  refundAmount = Number.isFinite(rawTotal) ? rawTotal.toFixed(2) : "0.00";
+  originalPaymentMethod = selectedOrder['Payment Method'] || "Unknown";
+}
+
 
         // Payload
         const returnPayload = {
