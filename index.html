@@ -511,97 +511,95 @@
         </div>
     </div>
 
-    <!-- Exchange Order Modal - Modern Minimal Design -->
+    <!-- Exchange Order Modal -->
     <div class="modal" id="exchangeModal">
         <div class="modal-overlay"></div>
-        <div class="modal-content modern-exchange-modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-sync-alt"></i> Product Exchange</h3>
+                <h3>Exchange Order</h3>
                 <button class="modal-close" onclick="app.closeModal('exchange')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Clean Modern Exchange Interface -->
-                <div class="exchange-container">
-                    <!-- Products Comparison -->
-                    <div class="products-comparison">
-                        <!-- Current Product -->
-                        <div class="product-card current-product">
-                            <div class="card-header">
-                                <span class="status-badge current">Current Item</span>
+                <form id="exchangeForm" class="checkout-form">
+                    <div class="form-section">
+                        <h4>Exchange Request Details</h4>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" name="phone" class="form-input" placeholder="Your phone number" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" name="email" class="form-input" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" name="firstName" class="form-input" required>
                             </div>
-                            <div class="product-visual">
-                                <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300" alt="Current Product">
-                            </div>
-                            <div class="product-info">
-                                <h4>Black Cropped T-Shirt</h4>
-                                <p class="product-details">Size: XS • Order: GC-META5EX</p>
-                                <div class="price">300.00 EGP</div>
+                            <div class="form-group">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" name="lastName" class="form-input" required>
                             </div>
                         </div>
-                        
-                        <!-- Exchange Icon -->
-                        <div class="exchange-icon">
-                            <div class="icon-wrapper">
-                                <i class="fas fa-arrows-alt-h"></i>
+
+                        <div class="form-group">
+                            <label class="form-label">Shipping Address *</label>
+                            <input type="text" name="address" class="form-input" placeholder="Street address" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">City *</label>
+                                <input type="text" name="city" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Postal Code *</label>
+                                <input type="text" name="postalCode" class="form-input" required>
                             </div>
                         </div>
-                        
-                        <!-- New Product -->
-                        <div class="product-card new-product">
-                            <div class="card-header">
-                                <span class="status-badge new">New Item</span>
-                                <div class="rating">
-                                    <i class="fas fa-star"></i> 4.5 (89)
-                                </div>
-                            </div>
-                            <div class="product-visual">
-                                <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300" alt="New Product">
-                            </div>
-                            <div class="product-info">
-                                <h4>Essential Hoodie</h4>
-                                <p class="product-details">Size: M • Color: Gray</p>
-                                <div class="price">650.00 EGP</div>
-                            </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Reason for Exchange *</label>
+                            <textarea name="exchangeReason" class="form-input" rows="3" maxlength="500" placeholder="Please provide detailed reason for exchange" required></textarea>
                         </div>
-                    </div>
-                    
-                    <!-- Exchange Summary -->
-                    <div class="exchange-summary">
-                        <div class="summary-header">
-                            <h4><i class="fas fa-receipt"></i> Exchange Summary</h4>
-                        </div>
-                        <div class="calculation">
-                            <div class="calc-row">
-                                <span>Current Item Value</span>
-                                <span>300.00 EGP</span>
-                            </div>
-                            <div class="calc-row">
-                                <span>New Item Price</span>
-                                <span>650.00 EGP</span>
-                            </div>
-                            <div class="calc-row total">
-                                <span>Additional Payment</span>
-                                <span class="amount-due">+350.00 EGP</span>
-                            </div>
-                        </div>
-                        <div class="payment-info">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Payment will be collected on delivery</span>
+
+                        <div class="form-group">
+                            <label class="form-label">Order ID (if known)</label>
+                            <input type="text" name="orderId" class="form-input" placeholder="Optional - leave blank if unknown">
                         </div>
                     </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <button class="btn-cancel" onclick="app.closeModal('exchange')">
-                            Cancel
-                        </button>
-                        <button class="btn-confirm" onclick="app.proceedWithExchange()">
-                            <i class="fas fa-check"></i> Confirm Exchange
-                        </button>
+
+                    <!-- Order Selection Section (will be populated by JS) -->
+                    <div class="form-section" id="exchangeOrderSelection" style="display: none;">
+                        <h4>Select Order to Exchange</h4>
+                        <div class="order-list" id="exchangeOrderList">
+                            <!-- Populated by JavaScript -->
+                        </div>
                     </div>
-                </div>
+
+                    <!-- Exchange Product Selection (will be populated by JS) -->
+                    <div class="form-section" id="exchangeProductSelection" style="display: none;">
+                        <h4>Choose New Product</h4>
+                        <div class="exchange-product-grid" id="exchangeProductGrid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Exchange Summary (will be populated by JS) -->
+                    <div class="form-section" id="exchangeSummary" style="display: none;">
+                        <h4>Exchange Summary</h4>
+                        <div class="exchange-summary-content" id="exchangeSummaryContent">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="exchangeSubmit" style="display: none;">Submit Exchange Request</button>
+                </form>
             </div>
         </div>
     </div>
